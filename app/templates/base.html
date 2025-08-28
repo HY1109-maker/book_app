@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charaset = "UTF-8">
+        <meta name="viewport" content= "width=device-width, initial-scale=1.0">
+        {% if title %}
+        <title>{{ title }} - Snap images</title>
+        {% else %}
+        <title>Snap images</title>
+        {% endif %}
+    </head>
+    <body>
+        <header>
+        <h1>This is testpages</h1>
+        </header>
+        <main>
+        {% block content %}{% endblock %}
+        </main>
+        <footer></footer>
+    </body>
+</html>
