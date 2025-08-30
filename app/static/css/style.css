@@ -1,0 +1,79 @@
+html {
+  font-size: 62.5%;
+}
+
+body {
+    margin: 0 4%;
+    font-family: 'Noto serif JP', 'Times New Roman', serif;
+    background-color: white;
+    font-size: 1.6rem;
+    line-height: 1.5; /* 行間も指定しておくと読みやすい */
+}
+
+/* 3. clamp()で見出しなどを設定 */
+h1 {
+  /* 最小24px, 推奨5vw, 最大48px */
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+}
+
+h2 {
+  /* 最小20px, 推奨3vw, 最大32px */
+  font-size: clamp(2.0rem, 3vw, 3.2rem);
+}
+
+p {
+  /* 段落は画面幅で変えない、もしくは変化を小さくする */
+  font-size: 1.6rem; /* bodyと同じで固定、もしくはclamp()で少しだけ変化させる */
+}
+
+a {
+    display: block;
+    font-size: clamp(0.1rem, 3vw, 1.2rem);
+}
+
+.header-box {
+    display: flex;
+    padding-top: 2px;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgb(169, 169, 169);
+}
+
+.logo-placeholder {
+    width: 5rem;
+}
+
+.logo-placeholder img {
+    width: 100%;
+}
+
+.login-box {
+    display: flex;
+    /* justify-content: flex-end; */
+    align-items: center;
+    gap: 5px;
+}
+.login-box a {
+    display: block;
+    white-space: nowrap;
+    text-decoration: none;
+    color: black;
+}
+
+.icon-box {
+    width: 3rem;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.icon-box img {
+    width: 100%;
+    border-radius: 100%;
+}
+
+/* for map page */
+#map {
+    height: 320px;
+    width: 90%;
+    margin: 10px auto;
+}

@@ -11,3 +11,7 @@ def index():
 def login():
     form = LoginForm()
     return render_template('login_page.html', title='Login', form=form)
+
+@app.route('/map')
+def map():
+    return render_template('map.html', title='Map')
