@@ -1,25 +1,60 @@
 {% extends "base.html" %}
 
-{% block head_extra %}
-        
+{% block content %}
+    <div class="search-container" style="padding: 10px; text-align: center;">
+        <input type="text" id="searchInput" value="cafe" placeholder="例: cafe, restaurant...">
+        <button onclick="searchShops()">検索</button>
+    </div>
+    <div id="map"></div>
 {% endblock %}
 
-{% block content %}
-        <div id="map">
-            <script>
-                var map = L.map('map').setView([51.505, -0.09], 13);
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(map);
-                var marker = L.marker([51.5, -0.09]).addTo(map);
-                var circle = L.circle([51.508, -0.11], {
-                    color: 'red',
-                    fillColor: '#f03',
-                    fillOpacity: 0,
-                    radius: 500
-                }).addTo(map);
-            </script>
-        </div>
-        
+{% block head_extra %}
+    <script>
+        // DOMが読み込まれた後にスクリプトを実行
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // 地図の初期化 (京都市役所前あたり)
+            const map = L.map('map').setView([35.0116, 135.7681], 14);
+
+            // 背景タイル
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            let geoJsonLayer; // マーカーレイヤーを保持する変数
+
+            // グローバルスコープに関数を公開
+            window.searchShops = function() {
+                const keyword = document.getElementById('searchInput').value;
+                const bounds = map.getBounds();
+                const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+
+                // FlaskのAPIエンドポイントを呼び出す
+                fetch(`/search_shops?keyword=${keyword}&bbox=${bbox}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 既存のマーカーがあれば削除
+                        if (geoJsonLayer) {
+                            map.removeLayer(geoJsonLayer);
+                        }
+
+                        // GeoJSONデータからマーカーを作成して地図に追加
+                        geoJsonLayer = L.geoJSON(data, {
+                            onEachFeature: function (feature, layer) {
+                                // ポップアップに店の名前を表示
+                                const shopName = feature.properties.name || '名前なし';
+                                layer.bindPopup(shopName);
+                            }
+                        }).addTo(map);
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            // 初回読み込み時に一度検索を実行
+            searchShops();
+
+            // 地図の移動が終わったら再検索
+            map.on('moveend', searchShops);
+        });
+    </script>
 {% endblock %}
