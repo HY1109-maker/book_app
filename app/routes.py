@@ -5,6 +5,12 @@ from app.forms import LoginForm, RegistrationForm
 from app import db
 from app.models import User
 from flask_login import current_user, login_user, logout_user 
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from flask_login import login_required
+from app.forms import PostForm
+from app.models import Shop, Post
 
 @app.route('/')
 @app.route('/index')
@@ -173,3 +179,44 @@ def register():
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
+
+@app.route('/create_post', methods = ['GET', 'POST'])
+@login_required
+def create_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        # 1.save img
+        image_file = form.image.data
+        # change filename as secured name
+        filename = secure_filename(image_file.filename)
+        unique_filename = str(uuid.uuid4()) + "_" + filename
+        # save path
+        upload_path = os.path.join(app.root_path, 'static/uploads', unique_filename)
+        # saving
+        image_file.save(upload_path)
+
+        # 2. searching restaurants or making new it
+        shop_name = form.shop_name.data
+        # Here, saving restaurants info into DB, the info is from Nomination API, now its damydata
+        shop = Shop.query.filter_by(name=shop_name).first()
+        if not shop:
+            # In actual case, latitudes are required with API 
+            shop = Shop(osm_id = int(uuid.uuid4().int % 100000), name = shop_name, latitude = 35.0, longitude = 135.7)
+            db.session.add(shop)
+            db.session.commit() 
+
+        # 3. saving post with DB
+        post = Post(
+            image_filename = unique_filename,
+            body=form.comment.data,
+            author = current_user,
+            shop = shop
+        )
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Your post is now live!')
+        return redirect(url_for('index')) # 投稿後はトップページへ
+
+    return render_template('create_post.html', title='New Post', form=form)
