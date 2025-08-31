@@ -123,37 +123,65 @@ a {
 
 /* Post Grid Styles */
 .post-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3列のグリッドを作成 */
+    column-count: 3; /* 3列のカラムを作成 */
+    column-gap: 15px; /* カラム間の隙間 */
+    padding: 15px 0;
     gap: 15px; /* カード間の隙間 */
     padding: 15px 0;
 }
 
 .post-card {
+    position: relative; /* オーバーレイの基準位置 */
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden; /* 角丸を有効にする */
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    break-inside: avoid; /* カードが途中で改ページされないようにする */
+    cursor: pointer; /* ホバーでインタラクティブ性を示す */
+    break-inside: avoid; /* カードが途中で改ページされないようにする (Masonry-like) */
+    margin-bottom: 15px; /* カード下のマージンを追加 */
+    break-inside: avoid; /* カードがカラムの途中で分割されるのを防ぐ */
 }
 
 .post-card img {
     width: 100%;
     height: auto;
     display: block;
+    transition: transform 0.3s ease-in-out; /* ホバー時の画像拡大アニメーション */
+}
+
+.post-card:hover img {
+    transform: scale(1.05); /* ホバーで画像を少し拡大 */
 }
 
 .post-info {
-    padding: 10px;
+    position: absolute; /* 画像の上に重ねる */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* ホバー時は全体を覆う */
+    background: rgba(0, 0, 0, 0.6); /* 半透明の黒背景 */
+    color: white;
+    padding: 15px;
+    box-sizing: border-box; /* paddingを含めてwidth/heightを計算 */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* 下揃え */
+    opacity: 0; /* 通常時は非表示 */
+    transition: opacity 0.3s ease-in-out; /* フェードイン/アウト */
+}
+
+.post-card:hover .post-info {
+    opacity: 1; /* ホバー時に表示 */
 }
 
 .post-body {
     font-size: 1.4rem;
     margin: 0 0 8px 0;
+    font-weight: bold;
 }
 
 .post-meta {
     font-size: 1.2rem;
-    color: #777;
+    color: #eee;
     margin: 0;
 }

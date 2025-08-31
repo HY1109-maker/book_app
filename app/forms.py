@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
+from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Optional
 from app.models import User # --- Userモデルをインポート ---
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 
@@ -38,5 +38,5 @@ class PostForm(FlaskForm):
         FileAllowed(['jpg','jpeg','png','gif', 'Images only"'])
     ])
     shop_name = StringField('Shop Name', validators=[DataRequired()])
-    comment = TextAreaField('Comment', validators=[DataRequired()])
+    comment = TextAreaField('Comment', validators=[Optional()])
     submit = SubmitField('Post')
