@@ -27,11 +27,27 @@
                 <div class="icon-box">
                     <img src="{{ url_for('static', filename='/imgs/icon_holder.png') }}" alt="">
                 </div>
+                
+                {% if current_user.is_anonymous %}
                 <a href="{{ url_for('login') }}">Log In</a>
+                {% else %}
+                <span>Hi, {{ current_user.username }}!</span>
+                <a href="{{ url_for('logout') }}">Logout</a>
+                {% endif %}
             </div>
         </div>
         </header>
         <main>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
         </main>
         <footer></footer>
