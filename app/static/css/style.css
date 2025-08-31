@@ -118,3 +118,42 @@ a {
 #search-box-container button:hover {
     background-color: #e5eaf3;
 }
+
+/* ▼▼▼ 末尾に追記 ▼▼▼ */
+
+/* Post Grid Styles */
+.post-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3列のグリッドを作成 */
+    gap: 15px; /* カード間の隙間 */
+    padding: 15px 0;
+}
+
+.post-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden; /* 角丸を有効にする */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    break-inside: avoid; /* カードが途中で改ページされないようにする */
+}
+
+.post-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.post-info {
+    padding: 10px;
+}
+
+.post-body {
+    font-size: 1.4rem;
+    margin: 0 0 8px 0;
+}
+
+.post-meta {
+    font-size: 1.2rem;
+    color: #777;
+    margin: 0;
+}

@@ -15,7 +15,9 @@ from app.models import Shop, Post
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('index.html', title='Home')
+    # from DB, all post data is obtained with time order
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html', title='Home', posts=posts)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
