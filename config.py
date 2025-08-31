@@ -6,5 +6,7 @@ class Config:
     SQLALCHEMY_DATABESE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir,'app.db')
     
-    # ▼▼▼ 以下を追記 ▼▼▼
+    # データAPI
     OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter'
+    #　自然言語検索用のAPI
+    NOMINATIM_API_URL = 'https://nominatim.openstreetmap.org/search'
