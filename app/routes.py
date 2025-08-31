@@ -1,16 +1,16 @@
 from app import app # appをインポート
 from flask import render_template, request, jsonify, redirect, flash, url_for
 import requests 
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm,PostForm
 from app import db
-from app.models import User
+from app.models import User, Shop, Post
 from flask_login import current_user, login_user, logout_user 
 import os
 import uuid
 from werkzeug.utils import secure_filename
 from flask_login import login_required
-from app.forms import PostForm
-from app.models import Shop, Post
+from datetime import datetime, timedelta, timezone
+from math import radians, cos, sin, asin, sqrt
 
 @app.route('/')
 @app.route('/index')
@@ -49,8 +49,8 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/map')
-def map():
+@app.route('/map_page')
+def map_page():
     return render_template('map.html', title='Map')
 
 
@@ -325,3 +325,89 @@ def get_posts_for_shop(shop_id):
             'author_username': post.author.username
         })
     return jsonify(posts_data)
+
+
+# @app.route('/timeline')
+# @login_required # タイムラインはログインしているユーザーのみが見れるようにします
+# def timeline():
+#     # データベースから全ての投稿を新しい順に取得
+#     posts = Post.query.order_by(Post.timestamp.desc()).all()
+#     return render_template('timeline.html', title='Timeline', posts=posts)
+
+
+# ▼▼▼ 2点間の距離を計算するヘルパー関数（ハーベサイン公式）を追加 ▼▼▼
+def haversine(lon1, lat1, lon2, lat2):
+    """
+    Calculate the great circle distance in kilometers between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # 緯度経度をラジアンに変換
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # ハーベサインの公式
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 6371 # 地球の半径 (km)
+    return c * r
+
+# ▼▼▼ /timelineルートをAPIに変更し、/api/timelineとして作成 ▼▼▼
+@app.route('/api/timeline')
+@login_required
+def api_timeline():
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+
+    recent_date = datetime.utcnow() - timedelta(days=30)
+    base_query = Post.query.filter(Post.timestamp >= recent_date)
+
+    if lat is not None and lon is not None:
+        posts = base_query.all()
+        scored_posts = []
+        
+        for post in posts:
+            # ▼▼▼ このif文を追加 ▼▼▼
+            # shopと、その緯度経度がNoneでないことを確認する
+            if post.shop and post.shop.latitude is not None and post.shop.longitude is not None:
+                # --- 2. 距離スコアの計算 ---
+                distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
+                distance_score = 1 / (distance + 1)
+
+                # --- 3. 時間スコアの計算 ---
+                now = datetime.utcnow()
+                hours_ago = (now - post.timestamp).total_seconds() / 3600
+                time_score = 1 / (hours_ago + 1)
+
+                # --- 4. 最終スコアの計算 (重み付け) ---
+                final_score = (time_score * 0.6) + (distance_score * 0.4)
+                
+                scored_posts.append({'post': post, 'score': final_score})
+            # ▲▲▲ ここまで ▲▲▲
+        
+        # スコアが高い順にソート
+        sorted_posts_list = sorted(scored_posts, key=lambda x: x['score'], reverse=True)
+        posts = [item['post'] for item in sorted_posts_list]
+    else:
+        # 緯度経度がなければ、通常通り新しい順にソート
+        posts = base_query.order_by(Post.timestamp.desc()).all()
+
+    # JSONレスポンスを生成 (変更なし)
+    posts_data = [{
+        'id': post.id,
+        'body': post.body,
+        'image_filename': post.image_filename,
+        'author_username': post.author.username,
+        'shop_name': post.shop.name
+    } for post in posts]
+    
+    return jsonify(posts_data)
+
+
+# ▼▼▼ 既存の /timeline ルートは、HTMLを返すだけのシンプルなものにする ▼▼▼
+@app.route('/timeline')
+@login_required
+def timeline():
+    # このルートはtimeline.htmlをレンダリングするだけ
+    # 実際のデータは上記のJavaScriptが/api/timelineから取得する
+    return render_template('timeline.html', title='Timeline')

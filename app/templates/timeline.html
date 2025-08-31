@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Timeline</h1>
+    <p id="loading-message">Getting your location and loading posts...</p>
+
+    <div class="post-grid">
+        {% for post in posts %}
+            <div class="post-card">
+                <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                <div class="post-info">
+                    <p class="post-body">{{ post.body or '' }}</p>
+                    <p class="post-meta">
+                        Posted by {{ post.author.username }} at {{ post.shop.name }}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+
+{% block head_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const timelineGrid = document.getElementById('timeline-grid');
+    const loadingMessage = document.getElementById('loading-message');
+
+    // 1. ブラウザが位置情報取得に対応しているかチェック
+    if (navigator.geolocation) {
+        // 2. 位置情報の取得を試みる
+        navigator.geolocation.getCurrentPosition(
+            // 成功した場合のコールバック関数
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                loadingMessage.textContent = 'Loading posts near you...';
+                // 3. 取得した緯度経度をバックエンドAPIに渡して投稿を取得
+                fetchPosts(lat, lon);
+            },
+            // 失敗した場合（ユーザーが許可しなかった場合など）
+            () => {
+                loadingMessage.textContent = 'Could not get location. Loading latest posts...';
+                // 位置情報なしで投稿を取得
+                fetchPosts();
+            }
+        );
+    } else {
+        // そもそもブラウザが対応していない場合
+        loadingMessage.textContent = 'Geolocation is not supported by this browser. Loading latest posts...';
+        fetchPosts();
+    }
+
+    // 投稿を取得して表示する関数
+    function fetchPosts(latitude = null, longitude = null) {
+        let apiUrl = '/api/timeline';
+        if (latitude && longitude) {
+            apiUrl += `?lat=${latitude}&lon=${longitude}`;
+        }
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(posts => {
+                loadingMessage.style.display = 'none'; // ローディングメッセージを隠す
+                let content = '';
+                posts.forEach(post => {
+                    content += `
+                        <div class="post-card">
+                            <img src="/static/uploads/${post.image_filename}" alt="User post">
+                            <div class="post-info">
+                                <p class="post-body">${post.body || ''}</p>
+                                <p class="post-meta">
+                                    Posted by ${post.author_username} at ${post.shop_name}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                });
+                timelineGrid.innerHTML = content;
+            });
+    }
+});
+</script>
+{% endblock %}
