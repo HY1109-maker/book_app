@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Optional
 from app.models import User # --- Userモデルをインポート ---
 from flask_wtf.file import FileField, FileRequired, FileAllowed
@@ -31,12 +31,17 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError('Please use a different email address.')
-        
+
 class PostForm(FlaskForm):
     image = FileField('Image', validators=[
         FileRequired(),
-        FileAllowed(['jpg','jpeg','png','gif', 'Images only"'])
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
     ])
     shop_name = StringField('Shop Name', validators=[DataRequired()])
     comment = TextAreaField('Comment', validators=[Optional()])
     submit = SubmitField('Post')
+    
+    # ▼▼▼ 以下3つの隠しフィールドを追加 ▼▼▼
+    shop_osm_id = HiddenField("OSM ID", validators=[DataRequired()])
+    shop_latitude = HiddenField("Latitude", validators=[DataRequired()])
+    shop_longitude = HiddenField("Longitude", validators=[DataRequired()])

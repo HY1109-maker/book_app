@@ -59,6 +59,9 @@ def to_geojson(overpass_json):
     features = []
     for element in overpass_json.get('elements', []):
         properties = element.get('tags', {})
+
+        properties['osm_id'] = element.get('id')
+
         
         if element['type'] == 'node':
             geometry = {
@@ -206,43 +209,80 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/create_post', methods = ['GET', 'POST'])
+# ... (既存のインポート) ...
+
+# ▼▼▼ 既存の create_post 関数を、以下のように全体を書き換える ▼▼▼
+@app.route('/create_post', methods=['GET', 'POST'])
 @login_required
 def create_post():
     form = PostForm()
     if form.validate_on_submit():
-        # 1.save img
+        # --- 1. 画像の保存処理 (変更なし) ---
         image_file = form.image.data
-        # change filename as secured name
         filename = secure_filename(image_file.filename)
         unique_filename = str(uuid.uuid4()) + "_" + filename
-        # save path
         upload_path = os.path.join(app.root_path, 'static/uploads', unique_filename)
-        # saving
         image_file.save(upload_path)
 
-        # 2. searching restaurants or making new it
-        shop_name = form.shop_name.data
-        # Here, saving restaurants info into DB, the info is from Nomination API, now its damydata
-        shop = Shop.query.filter_by(name=shop_name).first()
-        if not shop:
-            # In actual case, latitudes are required with API 
-            shop = Shop(osm_id = int(uuid.uuid4().int % 100000), name = shop_name, latitude = 35.0, longitude = 135.7)
-            db.session.add(shop)
-            db.session.commit() 
+        # --- 2. Nominatim APIでお店の情報を検索 ---
+        shop_name_query = form.shop_name.data
+        
+        # Nominatim APIのエンドポイント (config.pyから読み込むのが望ましい)
+        nominatim_url = 'https://nominatim.openstreetmap.org/search'
+        params = {
+            'q': shop_name_query,
+            'format': 'json',
+            'limit': 1, # 最も関連性の高い結果を1つだけ取得
+            'countrycodes': 'jp' # 日本国内に限定
+        }
+        headers = {'Accept-Language': 'ja',
+                   'User-Agent': 'FoodiesFanApp/1.0 (https://your-app-url.com or your-email@example.com)'
+        }
+        
+        try:
+            response = requests.get(nominatim_url, params=params, headers=headers)
+            # 200 OK以外のステータスコードが返ってきた場合にエラーを発生させる
+            response.raise_for_status() 
+            shop_data = response.json()
+        except (requests.RequestException, ValueError) as e:
+            # ネットワークエラーやJSONデコードエラーをキャッチ
+            flash(f'Could not retrieve shop information. Error: {e}')
+            return redirect(url_for('create_post'))
 
-        # 3. saving post with DB
+        if not shop_data:
+            flash('Shop not found. Please try a more specific name.')
+            return redirect(url_for('create_post'))
+
+       
+         # --- ▼▼▼ お店の情報をフォームの隠しフィールドから取得するように変更 ▼▼▼ ---
+        osm_id = form.shop_osm_id.data
+        shop_name = form.shop_name.data
+        latitude = form.shop_latitude.data
+        longitude = form.shop_longitude.data
+
+        # --- データベースでお店の情報を検索または作成 ---
+        shop = Shop.query.filter_by(osm_id=osm_id).first()
+        if not shop:
+            shop = Shop(
+                osm_id=osm_id,
+                name=shop_name,
+                latitude=float(latitude),
+                longitude=float(longitude)
+            )
+            db.session.add(shop)
+        
+        # --- 投稿をデータベースに保存 (変更なし) ---
         post = Post(
-            image_filename = unique_filename,
+            image_filename=unique_filename,
             body=form.comment.data,
-            author = current_user,
-            shop = shop
+            author=current_user,
+            shop=shop
         )
         db.session.add(post)
         db.session.commit()
-
+        
         flash('Your post is now live!')
-        return redirect(url_for('index')) # 投稿後はトップページへ
+        return redirect(url_for('index'))
 
     return render_template('create_post.html', title='New Post', form=form)
 
@@ -261,7 +301,8 @@ def get_shops():
             },
             "properties": {
                 "id": shop.id,
-                "name": shop.name
+                "name": shop.name,
+                "osm_id": shop.osm_id
             }
         })
     

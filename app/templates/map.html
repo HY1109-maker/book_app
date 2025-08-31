@@ -31,22 +31,38 @@
                 return L.marker(latlng, { icon: L.divIcon({ className: 'custom-marker-app', html: '📍' }) });
             }
 
+                        
             function displayShopDetails(shopId, shopName) {
                 fetch(`/api/shops/${shopId}/posts`)
                     .then(response => response.json())
                     .then(posts => {
-                        let content = `<h2>${shopName}</h2><div class="posts-grid-for-shop">`;
+                        // ▼▼▼ contentを生成する部分を以下のように書き換える ▼▼▼
+                        let content = `<h2>${shopName}</h2>`;
                         if (posts.length > 0) {
+                            // index.htmlと同じクラス名 post-grid を使用
+                            content += '<div class="post-grid">';
                             posts.forEach(post => {
-                                content += `<div class="post-item"><img src="/static/uploads/${post.image_filename}" alt="Post image"><p><strong>${post.author_username}</strong>: ${post.body || ''}</p></div>`;
+                                // index.htmlと全く同じHTML構造を生成
+                                content += `
+                                    <div class="post-card">
+                                        <img src="/static/uploads/${post.image_filename}" alt="User post">
+                                        <div class="post-info">
+                                            <p class="post-body">${post.body || ''}</p>
+                                            <p class="post-meta">
+                                                Posted by ${post.author_username}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `;
                             });
+                            content += '</div>';
                         } else {
                             content += '<p>まだ投稿がありません。</p>';
                         }
-                        content += '</div>';
                         detailsContainer.innerHTML = content;
                     });
             }
+
 
             window.searchMap = function() {
                 // レイヤーをクリア

@@ -2,15 +2,29 @@
 
 {% block content %}
     <h1>Create a New Post</h1>
+
     <form action="" method="post" novalidate enctype="multipart/form-data">
         {{ form.hidden_tag() }}
-        <p>
-            {{ form.shop_name.label }}<br>
-            {{ form.shop_name(size=32) }}<br>
-            {% for error in form.shop_name.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
+        
+        {{ form.shop_osm_id }}
+        {{ form.shop_latitude }}
+        {{ form.shop_longitude }}
+        <div style="display: none;">{{ form.shop_name }}</div>
+        
+        <div style="margin-bottom: 20px;">
+            <p><strong>Step 1: Search and select a shop on the map</strong></p>
+            <div>
+                <input type="text" id="shop_search_input" size="40" placeholder="Enter shop name and click search">
+                <button type="button" onclick="searchShopOnMap()">Search</button>
+            </div>
+            <div id="post-map" style="height: 300px; width: 100%; margin-top: 10px; border-radius: 8px;"></div>
+            
+            <div id="selected-shop-display">
+                <p><strong>Selected Shop:</strong> <span id="selected-shop-name">None</span></p>
+            </div>
+        </div>
+
+        <p><strong>Step 2: Upload your photo and comment</strong></p>
         <p>
             {{ form.image.label }}<br>
             {{ form.image }}<br>
@@ -27,4 +41,70 @@
         </p>
         <p>{{ form.submit() }}</p>
     </form>
+{% endblock %}
+
+
+
+{% block head_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('post-map').setView([35.0116, 135.7681], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    // ▼▼▼ searchMarkersの初期化方法を変更 ▼▼▼
+    // onEachFeatureを初期化時に設定する
+    const searchMarkers = L.geoJSON(null, {
+        onEachFeature: function (feature, layer) {
+            if (feature.properties && feature.properties.name) {
+                layer.bindPopup(feature.properties.name);
+            }
+            
+            layer.on('click', function(e) {
+                const props = e.target.feature.properties;
+                const latlng = e.latlng;
+
+                // フォームの隠しフィールドに値を設定
+                document.getElementById('shop_name').value = props.name || '';
+                document.getElementById('shop_osm_id').value = props.osm_id || '';
+                document.getElementById('shop_latitude').value = latlng.lat;
+                document.getElementById('shop_longitude').value = latlng.lng;
+                
+                // 選択されたお店の名前を表示
+                document.getElementById('selected-shop-name').textContent = props.name || 'N/A';
+                
+                // ハイライト処理
+                searchMarkers.eachLayer(l => l.setOpacity(0.5));
+                e.target.setOpacity(1.0);
+            });
+        }
+    }).addTo(map);
+
+    window.searchShopOnMap = function() {
+        const query = document.getElementById('shop_search_input').value;
+        if (!query) { alert('Please enter a shop name to search.'); return; }
+        const bounds = map.getBounds();
+        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+        
+        searchMarkers.clearLayers();
+        document.getElementById('selected-shop-name').textContent = 'None';
+
+        fetch(`/api/osm_search?keyword=${query}&bbox=${bbox}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.features || data.features.length === 0) {
+                    alert('No shops found. Please try a different name.');
+                    return;
+                }
+                
+                // ▼▼▼ addDataでマーカーを追加する方式に変更 ▼▼▼
+                searchMarkers.addData(data);
+                
+                // 最初に全てのマーカーを半透明にする
+                searchMarkers.eachLayer(layer => layer.setOpacity(0.5));
+            });
+    }
+});
+</script>
 {% endblock %}
