@@ -185,3 +185,36 @@ a {
     color: #eee;
     margin: 0;
 }
+
+/* ▼▼▼ 末尾に追記 ▼▼▼ */
+
+/* Map Page Details Styles */
+#shop-details-container {
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #ddd;
+    max-height: 40vh; /* 高さを画面の40%に制限 */
+    overflow-y: auto; /* 内容が多ければスクロールさせる */
+}
+#shop-details-container h2 {
+    margin-top: 0;
+}
+.placeholder-text {
+    color: #888;
+    text-align: center;
+    padding: 20px;
+}
+.posts-grid-for-shop {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.post-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+.post-item p {
+    font-size: 1.2rem;
+    margin: 5px 0 0 0;
+}

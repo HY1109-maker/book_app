@@ -5,58 +5,93 @@
         <div id="map"></div>
         <div id="search-box-container">
             <input type="text" id="searchInput" value="カフェ" placeholder="場所やジャンルを検索...">
-            <button onclick="searchShops()">検索</button>
+            <button onclick="searchMap()">地図を検索</button>
+        </div>
+        <div id="shop-details-container">
+             <p class="placeholder-text">お店のピンをクリックすると投稿が表示されます</p>
         </div>
     </div>
 {% endblock %}
 
 {% block head_extra %}
     <script>
-        // DOMが読み込まれた後にスクリプトを実行
         document.addEventListener('DOMContentLoaded', function () {
-            
-            // 地図の初期化 (京都市役所前あたり)
-            const map = L.map('map').setView([35.0116, 135.7681], 14);
-
-            // 背景タイル
+            const map = L.map('map').setView([35.0116, 135.7681], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                // ... attribution ...
             }).addTo(map);
 
-            let geoJsonLayer; // マーカーレイヤーを保持する変数
+            const detailsContainer = document.getElementById('shop-details-container');
+            let ourShopsLayer = L.geoJSON(null, { pointToLayer: createOurShopMarker }).addTo(map);
+            let osmShopsLayer = L.geoJSON().addTo(map);
 
-            // グローバルスコープに関数を公開
-            window.searchShops = function() {
-                const keyword = document.getElementById('searchInput').value;
-                const bounds = map.getBounds();
-                const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-
-                // FlaskのAPIエンドポイントを呼び出す
-                fetch(`/search_shops?keyword=${keyword}&bbox=${bbox}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // 既存のマーカーがあれば削除
-                        if (geoJsonLayer) {
-                            map.removeLayer(geoJsonLayer);
-                        }
-
-                        // GeoJSONデータからマーカーを作成して地図に追加
-                        geoJsonLayer = L.geoJSON(data, {
-                            onEachFeature: function (feature, layer) {
-                                // ポップアップに店の名前を表示
-                                const shopName = feature.properties.name || '名前なし';
-                                layer.bindPopup(shopName);
-                            }
-                        }).addTo(map);
-                    })
-                    .catch(error => console.error('Error:', error));
+            // --- 関数定義 ---
+            function createOurShopMarker(feature, latlng) {
+                // 自前データ用のカスタムマーカー (例: 色を変える)
+                return L.marker(latlng, { icon: L.divIcon({ className: 'custom-marker-app', html: '📍' }) });
             }
 
-            // 初回読み込み時に一度検索を実行
-            searchShops();
+            function displayShopDetails(shopId, shopName) {
+                fetch(`/api/shops/${shopId}/posts`)
+                    .then(response => response.json())
+                    .then(posts => {
+                        let content = `<h2>${shopName}</h2><div class="posts-grid-for-shop">`;
+                        if (posts.length > 0) {
+                            posts.forEach(post => {
+                                content += `<div class="post-item"><img src="/static/uploads/${post.image_filename}" alt="Post image"><p><strong>${post.author_username}</strong>: ${post.body || ''}</p></div>`;
+                            });
+                        } else {
+                            content += '<p>まだ投稿がありません。</p>';
+                        }
+                        content += '</div>';
+                        detailsContainer.innerHTML = content;
+                    });
+            }
 
-            // 地図の移動が終わったら再検索
-            map.on('moveend', searchShops);
+            window.searchMap = function() {
+                // レイヤーをクリア
+                ourShopsLayer.clearLayers();
+                osmShopsLayer.clearLayers();
+                
+                const bounds = map.getBounds();
+                const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+                const keyword = document.getElementById('searchInput').value;
+                const ourShopOsmIds = new Set();
+
+                // 1. 自前のDBからお店を取得
+                fetch('/api/shops')
+                    .then(response => response.json())
+                    .then(data => {
+                        data.features.forEach(feature => {
+                            ourShopOsmIds.add(feature.properties.osm_id); // osm_idをセットに保存
+                        });
+                        ourShopsLayer.addData(data);
+                    })
+                    .then(() => {
+                        // 2. Overpass APIからお店を取得
+                        fetch(`/api/osm_search?keyword=${keyword}&bbox=${bbox}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                // 自前DBにないお店だけをフィルタリング
+                                const filteredFeatures = data.features.filter(
+                                    feature => !ourShopOsmIds.has(feature.properties.osm_id)
+                                );
+                                osmShopsLayer.addData({ type: "FeatureCollection", features: filteredFeatures });
+                            });
+                    });
+            }
+
+            // --- イベントリスナー ---
+            ourShopsLayer.on('click', e => displayShopDetails(e.layer.feature.properties.id, e.layer.feature.properties.name));
+            osmShopsLayer.on('click', e => {
+                // OSMデータピンのクリックイベント（将来的に投稿を促す機能などを追加）
+                const shopName = e.layer.feature.properties.name || '名前不明';
+                detailsContainer.innerHTML = `<h2>${shopName}</h2><p>まだこのお店の投稿はありません。最初の投稿者になりましょう！</p><a href="/create_post?shop_name=${shopName}">投稿する</a>`;
+            });
+
+            // --- 初期表示 ---
+            searchMap();
+            map.on('moveend', searchMap);
         });
     </script>
 {% endblock %}

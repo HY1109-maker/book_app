@@ -145,6 +145,29 @@ def build_query_with_nominatim(query_str, bbox):
         out center;
     """
 
+@app.route('/api/osm_search')
+def osm_search():
+    query_str = request.args.get('keyword', 'restaurant')
+    bbox = request.args.get('bbox')
+
+    if not bbox:
+        return jsonify({"error": "BBox is required"}), 400
+
+    # 以前作成したNominatim連携のクエリビルダーを再利用
+    overpass_query = build_query_with_nominatim(query_str, bbox)
+    
+    api_url = app.config['OVERPASS_API_URL']
+    response = requests.get(api_url, params={'data': overpass_query})
+    
+    if response.status_code == 200:
+        data = response.json()
+        geojson = to_geojson(data) # to_geojsonでGeoJSONに変換
+        return jsonify(geojson)
+    else:
+        return jsonify({"error": "Failed to fetch data from Overpass API"}), 500
+
+
+
 # ▼▼▼ 既存のsearch_shops関数を以下のように書き換える ▼▼▼
 @app.route('/search_shops')
 def search_shops():
@@ -222,3 +245,42 @@ def create_post():
         return redirect(url_for('index')) # 投稿後はトップページへ
 
     return render_template('create_post.html', title='New Post', form=form)
+
+
+@app.route('/api/shops')
+def get_shops():
+    """データベースに保存されている全てのお店の情報をGeoJSON形式で返す"""
+    shops = Shop.query.all()
+    features = []
+    for shop in shops:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [shop.longitude, shop.latitude]
+            },
+            "properties": {
+                "id": shop.id,
+                "name": shop.name
+            }
+        })
+    
+    return jsonify({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+@app.route('/api/shops/<int:shop_id>/posts')
+def get_posts_for_shop(shop_id):
+    """指定されたお店IDに関連する投稿を返す"""
+    shop = Shop.query.get_or_404(shop_id)
+    posts_data = []
+    # 新しい投稿が先に表示されるように並び替え
+    for post in shop.posts.order_by(Post.timestamp.desc()):
+        posts_data.append({
+            'id': post.id,
+            'body': post.body,
+            'image_filename': post.image_filename,
+            'author_username': post.author.username
+        })
+    return jsonify(posts_data)
