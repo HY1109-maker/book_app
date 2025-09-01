@@ -352,31 +352,38 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6371 # 地球の半径 (km)
     return c * r
 
-# ▼▼▼ /timelineルートをAPIに変更し、/api/timelineとして作成 ▼▼▼
+
+
 @app.route('/api/timeline')
 @login_required
 def api_timeline():
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
 
-    # 緯度経度が提供されている場合のみスコアリングを行う
-    if lat is not None and lon is not None:
-        # --- 1. DBで30日以内の投稿に絞り込む (最も重要な最適化) ---
-        recent_date = datetime.now(timezone.utc) - timedelta(days=30)
-        recent_posts = Post.query.filter(Post.timestamp >= recent_date).all()
+    # タイムゾーン情報を持った「30日前の今」を計算
+    recent_date_aware = datetime.now(timezone.utc) - timedelta(days=30)
+    
+    # ▼▼▼ データベースでの比較用に、タイムゾーン情報を取り除いた naive 版を作成 ▼▼▼
+    recent_date_naive = recent_date_aware.replace(tzinfo=None)
 
+    # ▼▼▼ naive版を使ってデータベースに問い合わせる ▼▼▼
+    base_query = Post.query.filter(Post.timestamp >= recent_date_naive)
+
+    if lat is not None and lon is not None:
+        posts = base_query.all()
         scored_posts = []
+        
+        # スコア計算で使う「今」は、正確な aware 版を使用
         now = datetime.now(timezone.utc)
         
-        # --- 2. 絞り込んだ投稿に対してのみスコア計算 ---
-        for post in recent_posts:
-            # 緯度経度がない投稿はスキップ
+        for post in posts:
             if not (post.shop and post.shop.latitude is not None and post.shop.longitude is not None):
                 continue
 
             distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
             distance_score = 1 / (distance + 1)
 
+            # DBから取得した naive な時間に、aware 情報を付与して比較
             post_time_aware = post.timestamp.replace(tzinfo=timezone.utc)
             hours_ago = (now - post_time_aware).total_seconds() / 3600
             time_score = 1 / (hours_ago + 1)
@@ -384,12 +391,11 @@ def api_timeline():
             final_score = (time_score * 0.6) + (distance_score * 0.4)
             scored_posts.append({'post': post, 'score': final_score})
         
-        # スコアが高い順にソート
         sorted_posts_list = sorted(scored_posts, key=lambda x: x['score'], reverse=True)
         posts = [item['post'] for item in sorted_posts_list]
     else:
-        # 緯度経度がなければ、通常通り新しい順にソート (ページネーションの追加を推奨)
-        posts = Post.query.order_by(Post.timestamp.desc()).limit(50).all()
+        # 緯度経度がない場合は、新しい順に50件取得
+        posts = base_query.order_by(Post.timestamp.desc()).limit(50).all()
 
     # JSONレスポンスを生成 (変更なし)
     posts_data = [{
