@@ -359,7 +359,7 @@ def api_timeline():
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
 
-    recent_date = datetime.utcnow() - timedelta(days=30)
+    recent_date = datetime.now(timezone.utc) - timedelta(days=30)
     base_query = Post.query.filter(Post.timestamp >= recent_date)
 
     if lat is not None and lon is not None:
@@ -375,8 +375,10 @@ def api_timeline():
                 distance_score = 1 / (distance + 1)
 
                 # --- 3. 時間スコアの計算 ---
-                now = datetime.utcnow()
-                hours_ago = (now - post.timestamp).total_seconds() / 3600
+                now = datetime.now(timezone.utc)
+                #  ▼▼▼ post.timestampにタイムゾーン情報を付与して比較 ▼▼▼
+                post_time_aware = post.timestamp.replace(tzinfo=timezone.utc)
+                hours_ago = (now - post_time_aware).total_seconds() / 3600
                 time_score = 1 / (hours_ago + 1)
 
                 # --- 4. 最終スコアの計算 (重み付け) ---
