@@ -359,40 +359,37 @@ def api_timeline():
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
 
-    recent_date = datetime.now(timezone.utc) - timedelta(days=30)
-    base_query = Post.query.filter(Post.timestamp >= recent_date)
-
+    # 緯度経度が提供されている場合のみスコアリングを行う
     if lat is not None and lon is not None:
-        posts = base_query.all()
+        # --- 1. DBで30日以内の投稿に絞り込む (最も重要な最適化) ---
+        recent_date = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_posts = Post.query.filter(Post.timestamp >= recent_date).all()
+
         scored_posts = []
+        now = datetime.now(timezone.utc)
         
-        for post in posts:
-            # ▼▼▼ このif文を追加 ▼▼▼
-            # shopと、その緯度経度がNoneでないことを確認する
-            if post.shop and post.shop.latitude is not None and post.shop.longitude is not None:
-                # --- 2. 距離スコアの計算 ---
-                distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
-                distance_score = 1 / (distance + 1)
+        # --- 2. 絞り込んだ投稿に対してのみスコア計算 ---
+        for post in recent_posts:
+            # 緯度経度がない投稿はスキップ
+            if not (post.shop and post.shop.latitude is not None and post.shop.longitude is not None):
+                continue
 
-                # --- 3. 時間スコアの計算 ---
-                now = datetime.now(timezone.utc)
-                #  ▼▼▼ post.timestampにタイムゾーン情報を付与して比較 ▼▼▼
-                post_time_aware = post.timestamp.replace(tzinfo=timezone.utc)
-                hours_ago = (now - post_time_aware).total_seconds() / 3600
-                time_score = 1 / (hours_ago + 1)
+            distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
+            distance_score = 1 / (distance + 1)
 
-                # --- 4. 最終スコアの計算 (重み付け) ---
-                final_score = (time_score * 0.6) + (distance_score * 0.4)
-                
-                scored_posts.append({'post': post, 'score': final_score})
-            # ▲▲▲ ここまで ▲▲▲
+            post_time_aware = post.timestamp.replace(tzinfo=timezone.utc)
+            hours_ago = (now - post_time_aware).total_seconds() / 3600
+            time_score = 1 / (hours_ago + 1)
+
+            final_score = (time_score * 0.6) + (distance_score * 0.4)
+            scored_posts.append({'post': post, 'score': final_score})
         
         # スコアが高い順にソート
         sorted_posts_list = sorted(scored_posts, key=lambda x: x['score'], reverse=True)
         posts = [item['post'] for item in sorted_posts_list]
     else:
-        # 緯度経度がなければ、通常通り新しい順にソート
-        posts = base_query.order_by(Post.timestamp.desc()).all()
+        # 緯度経度がなければ、通常通り新しい順にソート (ページネーションの追加を推奨)
+        posts = Post.query.order_by(Post.timestamp.desc()).limit(50).all()
 
     # JSONレスポンスを生成 (変更なし)
     posts_data = [{
