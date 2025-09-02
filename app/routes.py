@@ -357,47 +357,19 @@ def haversine(lon1, lat1, lon2, lat2):
 @app.route('/api/timeline')
 @login_required
 def api_timeline():
-    lat = request.args.get('lat', type=float)
-    lon = request.args.get('lon', type=float)
+    # URLのクエリパラメータからページ番号を取得 (例: /api/timeline?page=2)
+    # 指定がなければ1ページ目
+    page = request.args.get('page', 1, type=int)
+    # 1ページあたりの投稿数
+    POSTS_PER_PAGE = 20
 
-    # タイムゾーン情報を持った「30日前の今」を計算
-    recent_date_aware = datetime.now(timezone.utc) - timedelta(days=30)
-    
-    # ▼▼▼ データベースでの比較用に、タイムゾーン情報を取り除いた naive 版を作成 ▼▼▼
-    recent_date_naive = recent_date_aware.replace(tzinfo=None)
+    # データベースから指定されたページの投稿を取得
+    # .paginate()を使うことで、自動的にLIMITとOFFSETが設定される
+    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(
+        page=page, per_page=POSTS_PER_PAGE, error_out=False
+    )
+    posts = pagination.items
 
-    # ▼▼▼ naive版を使ってデータベースに問い合わせる ▼▼▼
-    base_query = Post.query.filter(Post.timestamp >= recent_date_naive)
-
-    if lat is not None and lon is not None:
-        posts = base_query.all()
-        scored_posts = []
-        
-        # スコア計算で使う「今」は、正確な aware 版を使用
-        now = datetime.now(timezone.utc)
-        
-        for post in posts:
-            if not (post.shop and post.shop.latitude is not None and post.shop.longitude is not None):
-                continue
-
-            distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
-            distance_score = 1 / (distance + 1)
-
-            # DBから取得した naive な時間に、aware 情報を付与して比較
-            post_time_aware = post.timestamp.replace(tzinfo=timezone.utc)
-            hours_ago = (now - post_time_aware).total_seconds() / 3600
-            time_score = 1 / (hours_ago + 1)
-
-            final_score = (time_score * 0.6) + (distance_score * 0.4)
-            scored_posts.append({'post': post, 'score': final_score})
-        
-        sorted_posts_list = sorted(scored_posts, key=lambda x: x['score'], reverse=True)
-        posts = [item['post'] for item in sorted_posts_list]
-    else:
-        # 緯度経度がない場合は、新しい順に50件取得
-        posts = base_query.order_by(Post.timestamp.desc()).limit(50).all()
-
-    # JSONレスポンスを生成 (変更なし)
     posts_data = [{
         'id': post.id,
         'body': post.body,
@@ -405,8 +377,12 @@ def api_timeline():
         'author_username': post.author.username,
         'shop_name': post.shop.name
     } for post in posts]
-    
-    return jsonify(posts_data)
+
+    # フロントエンドに、次のページがあるかどうかの情報も返す
+    return jsonify({
+        'posts': posts_data,
+        'has_next_page': pagination.has_next
+    })
 
 
 # ▼▼▼ 既存の /timeline ルートは、HTMLを返すだけのシンプルなものにする ▼▼▼
