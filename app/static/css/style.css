@@ -228,3 +228,34 @@ a {
     font-size: 1.2rem;
     margin: 5px 0 0 0;
 }
+
+
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.like-section {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.like-btn {
+    font-size: 2rem;
+    cursor: pointer;
+    filter: grayscale(1); /* 通常時はグレーアウト */
+    transition: all 0.2s ease-in-out;
+}
+
+.like-btn.liked {
+    filter: grayscale(0); /* いいねしたらカラーに */
+    transform: scale(1.2); /* 少し拡大するアニメーション */
+}
+
+.likes-count {
+    font-size: 1.4rem;
+    font-weight: bold;
+}
