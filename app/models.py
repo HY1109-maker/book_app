@@ -28,10 +28,10 @@ class User(UserMixin, db.Model):
 
     def unlike_post(self, post):
         if self.has_liked_post(post):
-            self.liked_post.remove(post)
+            self.liked_posts.remove(post)
 
     def has_liked_post(self, post):
-        return self.liked_posts.filter(likes.c.post_id == post.id).count > 0
+        return self.liked_posts.filter(likes.c.post_id == post.id).count() > 0
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -56,7 +56,7 @@ class Post(db.Model):
     shop = db.relationship('Shop', back_populates='posts')
 
     # likers
-    likers = db.relationship('User', secondary = likes, back_populates='liked_post', lazy='dynamic')
+    likers = db.relationship('User', secondary = likes, back_populates='liked_posts', lazy='dynamic')
 
 
     def __repr__(self):
