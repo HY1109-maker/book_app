@@ -22,10 +22,10 @@ document.addEventListener('DOMContentLoaded', function () {
     
     let currentPage = 1;
     let isLoading = false;
-    let hasMorePages = true; // 次のページがあるかを管理するフラグ
+    let hasMorePages = true;
 
     function fetchPosts() {
-        if (isLoading || !hasMorePages) return; // 読み込み中 or 最終ページなら何もしない
+        if (isLoading || !hasMorePages) return;
         isLoading = true;
         loadingIndicator.style.display = 'block';
 
@@ -39,9 +39,20 @@ document.addEventListener('DOMContentLoaded', function () {
                             <img src="/static/uploads/${post.image_filename}" alt="User post">
                             <div class="post-info">
                                 <p class="post-body">${post.body || ''}</p>
-                                <p class="post-meta">
-                                    Posted by ${post.author_username} at ${post.shop_name}
-                                </p>
+                                <div class="post-actions">
+                                    <div class="like-section">
+                                        <span class="like-btn ${post.is_liked_by_user ? 'liked' : ''}" data-post-id="${post.id}">❤️</span>
+                                        <span class="likes-count">${post.likes_count}</span>
+                                    </div>
+                                    <div>
+                                        <p class="post-meta">
+                                            Posted by ${post.author_username}
+                                        </p>
+                                        <p class="post-meta">
+                                            at ${post.shop_name}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -50,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 hasMorePages = data.has_next_page;
                 if (!hasMorePages) {
-                    endOfTimelineMessage.style.display = 'block'; // 最終ページならメッセージを表示
+                    endOfTimelineMessage.style.display = 'block';
                 }
                 currentPage++;
                 
@@ -64,9 +75,31 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    // ▼▼▼ スクロールイベントの監視 ▼▼▼
+    // 「いいね！」ボタンのクリック処理 (イベント委譲)
+    timelineGrid.addEventListener('click', function(event) {
+        const likeBtn = event.target.closest('.like-btn');
+        if (!likeBtn) return;
+
+        const postId = likeBtn.dataset.postId;
+        const isLiked = likeBtn.classList.contains('liked');
+        const apiUrl = isLiked ? `/unlike/${postId}` : `/like/${postId}`;
+
+        fetch(apiUrl, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    likeBtn.classList.toggle('liked');
+                    const likesCountSpan = likeBtn.nextElementSibling;
+                    if (likesCountSpan) {
+                        likesCountSpan.textContent = data.likes_count;
+                    }
+                }
+            })
+            .catch(error => console.error('Error liking/unliking post:', error));
+    });
+
+    // スクロールイベントの監視
     window.addEventListener('scroll', () => {
-        // (ウィンドウの高さ + スクロール量)が、(ページ全体の高さ - 少しの余白)を超えたら次のページを読み込む
         if ((window.innerHeight + window.scrollY) >= document.documentElement.offsetHeight - 200) {
             fetchPosts();
         }
