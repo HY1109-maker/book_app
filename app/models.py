@@ -7,12 +7,31 @@ from flask_login import UserMixin
 def load_user(id):
     return User.query.get(int(id))
 
+likes = db.Table('likes',
+                 db.Column('user_id', db.Integer, db.ForeignKey('user.id', name='fk_likes_user_id')),
+                 db.Column('post_id', db.Integer, db.ForeignKey('post.id', name='fk_likes_post_id')))
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True, nullable=False)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(120), index =True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     posts = db.relationship('Post', back_populates='author', lazy='dynamic')
+
+    # liked_post
+    liked_posts = db.relationship('Post', secondary=likes, back_populates='likers', lazy='dynamic')
+
+    # helper methods for making "like function"
+    def like_post(self, post):
+        if not self.has_liked_post(post):
+            self.liked_posts.append(post)
+
+    def unlike_post(self, post):
+        if self.has_liked_post(post):
+            self.liked_post.remove(post)
+
+    def has_liked_post(self, post):
+        return self.liked_posts.filter(likes.c.post_id == post.id).count > 0
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -35,6 +54,9 @@ class Post(db.Model):
 
     author = db.relationship('User', back_populates='posts')
     shop = db.relationship('Shop', back_populates='posts')
+
+    # likers
+    likers = db.relationship('User', secondary = likes, back_populates='liked_post', lazy='dynamic')
 
 
     def __repr__(self):
