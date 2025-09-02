@@ -88,90 +88,63 @@ def to_geojson(overpass_json):
         "features": features
     }
 
-def build_query_with_nominatim(query_str, bbox):
-    """Nominatimで検索語を解析し、Overpassクエリを構築する"""
 
-    # 1. Nominatimに問い合わせて、検索語からOSMタグを取得
-    params = {
-        'q': query_str,
-        'format': 'json',
-        'limit': 1, # 最も関連性の高い結果を1つだけ取得
-        'osm_type': 'node,way,relation'
+def build_query_based_on_keyword(keyword, bbox):
+    """
+    キーワードを解析し、カテゴリ検索か名称検索かを判断して
+    Overpass APIのクエリを生成する
+    """
+    # 一般的なカテゴリキーワードと、対応するOSMのタグ
+    CATEGORY_KEYWORDS = {
+        'カフェ': '["amenity"="cafe"]',
+        'レストラン': '["amenity"="restaurant"]',
+        'パン': '["shop"="bakery"]',
+        '居酒屋': '["amenity"="izakaya"]',
+        'バー': '["amenity"="bar"]',
+        'ラーメン': '["cuisine"="ramen"]',
+        '和食': '["cuisine"="japanese"]',
+        'イタリアン': '["cuisine"="italian"]',
+        'フレンチ': '["cuisine"="french"]',
+        '中華': '["cuisine"="chinese"]',
+        '寿司': '["cuisine"="sushi"]',
+        'カレー': '["cuisine"="curry"]',
     }
     
-    headers = {'Accept-Language': 'ja'} # 結果を日本語優先にする
-    api_url = app.config['NOMINATIM_API_URL']
-    
-    try:
-        # Nominatim APIは利用ポリシーがあるため、適切なUser-Agentを設定することが推奨されます
-        # headers['User-Agent'] = 'MyAwesomeFoodieApp/1.0 (myemail@example.com)'
-        response = requests.get(api_url, params=params, headers=headers)
-        response.raise_for_status() # エラーがあれば例外を発生
-        results = response.json()
-    except requests.RequestException as e:
-        print(f"Nominatim API error: {e}")
-        # Nominatimが失敗した場合は、単純なname検索にフォールバックする
-        return f"""
-            [out:json];
-            (
-              node["name"~"{query_str}"]({bbox});
-              way["name"~"{query_str}"]({bbox});
-            );
-            out center;
-        """
-
-    tag_filters = ""
-    # Nominatimがカテゴリ情報(class, type)を返した場合、それをタグに変換
-    if results and 'class' in results[0] and 'type' in results[0]:
-        osm_class = results[0]['class']
-        osm_type = results[0]['type']
-        
-        # Nominatimの分類をOSMの主要なキーにマッピング
-        # この部分は必要に応じて拡張できます
-        if osm_class in ['amenity', 'shop', 'tourism', 'leisure']:
-            tag_filters += f'["{osm_class}"="{osm_type}"]'
-        
-        # 「フレンチレストラン」のような検索のために、元のクエリもname検索に加える
-        tag_filters += f'["name"~"{query_str}",i]'
-
+    # キーワードがカテゴリ辞書に完全一致するかチェック
+    if keyword in CATEGORY_KEYWORDS:
+        tag = CATEGORY_KEYWORDS[keyword]
+        # カテゴリ検索の場合は、そのタグを持つ施設を検索
+        query_part = f"node{tag}({bbox}); way{tag}({bbox});"
     else:
-        # カテゴリが取れなかった場合は、単純な名称での部分一致検索にする (iは大小文字無視)
-        tag_filters = f'["name"~"{query_str}",i]'
-
-
+        # カテゴリでない場合は、名称でのあいまい検索
+        query_part = f'node["name"~"{keyword}",i]({bbox}); way["name"~"{keyword}",i]({bbox});'
+        
     return f"""
         [out:json];
-        (
-          node{tag_filters}({bbox});
-          way{tag_filters}({bbox});
-        );
+        ({query_part});
         out center;
     """
 
+
 @app.route('/api/osm_search')
 def osm_search():
-    query_str = request.args.get('keyword', 'restaurant')
+    keyword = request.args.get('keyword', 'restaurant')
     bbox = request.args.get('bbox')
+    if not bbox: return jsonify({"error": "BBox is required"}), 400
 
-    if not bbox:
-        return jsonify({"error": "BBox is required"}), 400
-
-    # 以前作成したNominatim連携のクエリビルダーを再利用
-    overpass_query = build_query_with_nominatim(query_str, bbox)
+    overpass_query = build_query_based_on_keyword(keyword, bbox)
     
     api_url = app.config['OVERPASS_API_URL']
     response = requests.get(api_url, params={'data': overpass_query})
     
     if response.status_code == 200:
         data = response.json()
-        geojson = to_geojson(data) # to_geojsonでGeoJSONに変換
+        geojson = to_geojson(data) # to_geojsonヘルパー関数は必要です
         return jsonify(geojson)
     else:
         return jsonify({"error": "Failed to fetch data from Overpass API"}), 500
 
 
-
-# ▼▼▼ 既存のsearch_shops関数を以下のように書き換える ▼▼▼
 @app.route('/search_shops')
 def search_shops():
     query_str = request.args.get('keyword', 'レストラン')
@@ -181,7 +154,7 @@ def search_shops():
         return jsonify({"error": "BBox (bounding box) is required"}), 400
 
     # Nominatimを使う新しい関数でクエリを構築
-    overpass_query = build_query_with_nominatim(query_str, bbox)
+    overpass_query = build_query_based_on_keyword(query_str, bbox)
     
     api_url = app.config['OVERPASS_API_URL']
     response = requests.get(api_url, params={'data': overpass_query})
@@ -208,9 +181,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-
-# ... (既存のインポート) ...
-
 # ▼▼▼ 既存の create_post 関数を、以下のように全体を書き換える ▼▼▼
 @app.route('/create_post', methods=['GET', 'POST'])
 @login_required
@@ -236,7 +206,7 @@ def create_post():
             'countrycodes': 'jp' # 日本国内に限定
         }
         headers = {'Accept-Language': 'ja',
-                   'User-Agent': 'FoodiesFanApp/1.0 (https://your-app-url.com or your-email@example.com)'
+                   'User-Agent': 'FoodiesFanApp/1.0 (kuanshangang@gmail.com)'
         }
         
         try:
@@ -353,36 +323,63 @@ def haversine(lon1, lat1, lon2, lat2):
     return c * r
 
 
-
 @app.route('/api/timeline')
 @login_required
 def api_timeline():
-    # URLのクエリパラメータからページ番号を取得 (例: /api/timeline?page=2)
-    # 指定がなければ1ページ目
     page = request.args.get('page', 1, type=int)
-    # 1ページあたりの投稿数
-    POSTS_PER_PAGE = 20
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    POSTS_PER_PAGE = 9
 
-    # データベースから指定されたページの投稿を取得
-    # .paginate()を使うことで、自動的にLIMITとOFFSETが設定される
-    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(
+    # 1. まずはDBで30日以内の投稿に絞り込む（パフォーマンスのため）
+    recent_date_naive = (datetime.utcnow() - timedelta(days=30))
+    base_query = Post.query.filter(Post.timestamp >= recent_date_naive)
+
+    # 2. ページネーションを適用
+    pagination = base_query.order_by(Post.timestamp.desc()).paginate(
         page=page, per_page=POSTS_PER_PAGE, error_out=False
     )
-    posts = pagination.items
+    posts_on_page = pagination.items
+    
+    # 3. 緯度経度がある場合、取得した投稿を並び替える
+    if lat is not None and lon is not None:
+        sortable_posts = []
+        for post in posts_on_page:
+            distance = float('inf') # デフォルトは無限遠
+            if post.shop and post.shop.latitude is not None and post.shop.longitude is not None:
+                distance = haversine(lon, lat, post.shop.longitude, post.shop.latitude)
 
+            sortable_posts.append({
+                'post': post,
+                'timestamp': post.timestamp,
+                'distance': distance,
+                'likes': post.likers.count()
+            })
+        
+        # 4. 優先順位に従ってソート (1.時間(降順), 2.距離(昇順), 3.いいね(降順))
+        # 降順にしたいキーにはマイナスを付ける
+        sorted_list = sorted(sortable_posts, key=lambda x: (x['timestamp'], -x['distance'], -x['likes']), reverse=True)
+        posts = [item['post'] for item in sorted_list]
+    else:
+        # 緯度経度がなければ、そのまま表示
+        posts = posts_on_page
+
+    # JSONレスポンスを生成
     posts_data = [{
         'id': post.id,
         'body': post.body,
         'image_filename': post.image_filename,
         'author_username': post.author.username,
-        'shop_name': post.shop.name
+        'shop_name': post.shop.name,
+        'likes_count': post.likers.count(),
+        'is_liked_by_user': current_user.has_liked_post(post)
     } for post in posts]
-
-    # フロントエンドに、次のページがあるかどうかの情報も返す
+    
     return jsonify({
         'posts': posts_data,
         'has_next_page': pagination.has_next
     })
+
 
 
 # ▼▼▼ 既存の /timeline ルートは、HTMLを返すだけのシンプルなものにする ▼▼▼
@@ -392,3 +389,20 @@ def timeline():
     # このルートはtimeline.htmlをレンダリングするだけ
     # 実際のデータは上記のJavaScriptが/api/timelineから取得する
     return render_template('timeline.html', title='Timeline')
+
+
+@app.route('/like/<int:post_id>', methods=['POST'])
+@login_required
+def like(post_id):
+    post = Post.query.get_or_404(post_id)
+    current_user.like_post(post)
+    db.session.commit()
+    return jsonify({'status': 'ok', 'likes_count': post.likers.count()})
+
+@app.route('/unlike/<int:post_id>', methods=['POST'])
+@login_required
+def unlike(post_id):
+    post = Post.query.get_or_404(post_id)
+    current_user.unlike_post(post)
+    db.session.commit()
+    return jsonify({'status': 'ok', 'likes_count': post.likers.count()})
