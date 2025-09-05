@@ -1,3 +1,4 @@
+/* font size, font familiar, sameconponent */
 html {
   font-size: 62.5%;
 }
@@ -258,4 +259,47 @@ a {
 .likes-count {
     font-size: 1.4rem;
     font-weight: bold;
+}
+
+/* ▼▼▼ 末尾に追記 ▼▼▼ */
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+    z-index: 1000;
+}
+
+.nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #888;
+    font-size: 1rem;
+}
+
+.nav-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 2px;
+}
+
+.nav-link:hover {
+    color: #333; /* ホバー時の色 */
+}
+
+/* ページコンテンツがフッターに隠れないように、bodyに下の余白を追加 */
+body {
+    padding-bottom: 70px;
 }

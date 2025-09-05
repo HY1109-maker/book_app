@@ -24,17 +24,18 @@
                 <a href="{{ url_for('index')}}"><img class="logo" src="{{ url_for('static', filename='/imgs/logo_img.png')}}" alt="Foodies fan"></a>
             </div>
             <div class="login-box">
-                <div class="icon-box">
-                    <img src="{{ url_for('static', filename='/imgs/icon_holder.png') }}" alt="">
-                </div>
+                
                 
                 {% if current_user.is_anonymous %}
                 <a href="{{ url_for('login') }}">Log In</a>
+                <div class="icon-box">
+                    <img src="{{ url_for('static', filename='/imgs/icon_holder.png') }}" alt="">
+                </div>
                 {% else %}
-                <a href="{{ url_for('index') }}">Home</a>
+                <!-- <a href="{{ url_for('index') }}">Home</a>
                 <a href="{{ url_for('timeline') }}">Timeline</a>
-                <a href="{{ url_for('create_post') }}">New Post</a>
-                <span>Hi, {{ current_user.username }}!</span>
+                <a href="{{ url_for('create_post') }}">New Post</a> -->
+                <span>{{ current_user.username }}</span>
                 <a href="{{ url_for('logout') }}">Logout</a>
                 {% endif %}
             </div>
@@ -54,5 +55,28 @@
         {% block content %}{% endblock %}
         </main>
         <footer></footer>
+
+        {% if current_user.is_authenticated %}
+        <nav class="bottom-nav">
+            <a href="{{ url_for('timeline') }}" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="nav-icon">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Timeline</span>
+            </a>
+            <a href="{{ url_for('map_page') }}" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="nav-icon">
+                  <path d="M20.5 3l-.16.03L15 5.1 9 3l-6.35 2.12A2 2 0 001 7v13c0 .3.06.58.17.85l.18.35L9 18.9l6 2.1 6.35-2.12A2 2 0 0023 17V4a1 1 0 00-.5-1zM15 18.89l-6-2.11V5.11l6 2.11v11.67z"/>
+                </svg>
+                <span>Map</span>
+            </a>
+            <a href="{{ url_for('create_post') }}" class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="nav-icon">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <span>New Post</span>
+            </a>
+        </nav>
+        {% endif %}
     </body>
 </html>
