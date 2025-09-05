@@ -18,48 +18,58 @@
         document.addEventListener('DOMContentLoaded', function () {
             const map = L.map('map').setView([35.0116, 135.7681], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                // ... attribution ...
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             }).addTo(map);
 
-            const detailsContainer = document.getElementById('shop-details-container');
+            // ▼▼▼ createOurShopMarker関数をAwesomeMarkersを使うように書き換える ▼▼▼
+            function createOurShopMarker(feature, latlng) {
+                // Font Awesomeのアイコン名 (例: 'utensils', 'martini-glass', 'camera')
+                // Font Awesomeのサイトで好きなアイコンを探せます
+                const icon = L.AwesomeMarkers.icon({
+                    icon: 'camera',
+                    markerColor: 'blue', // 色: 'red', 'darkred', 'orange', 'green', 'blue', 'purple', 'darkpurple', 'cadetblue'
+                    prefix: 'fa' // Font Awesomeを使う場合のおまじない
+                });
+                return L.marker(latlng, { icon: icon });
+            }
+
+            // const detailsContainer = document.getElementById('shop-details-container');
+            
+            // ▼▼▼ ourShopsLayerの初期化時に、新しい関数を指定する ▼▼▼
             let ourShopsLayer = L.geoJSON(null, { pointToLayer: createOurShopMarker }).addTo(map);
             let osmShopsLayer = L.geoJSON().addTo(map);
 
-            // --- 関数定義 ---
-            function createOurShopMarker(feature, latlng) {
-                // 自前データ用のカスタムマーカー (例: 色を変える)
-                return L.marker(latlng, { icon: L.divIcon({ className: 'custom-marker-app', html: '📍' }) });
-            }
-
                         
-            function displayShopDetails(shopId, shopName) {
+            function openShopPopup(latlng, shopId, shopName) {
+                // APIからそのお店の投稿を取得
                 fetch(`/api/shops/${shopId}/posts`)
                     .then(response => response.json())
                     .then(posts => {
-                        // ▼▼▼ contentを生成する部分を以下のように書き換える ▼▼▼
-                        let content = `<h2>${shopName}</h2>`;
+                        let imagesHtml = '';
                         if (posts.length > 0) {
-                            // index.htmlと同じクラス名 post-grid を使用
-                            content += '<div class="post-grid">';
-                            posts.forEach(post => {
-                                // index.htmlと全く同じHTML構造を生成
-                                content += `
-                                    <div class="post-card">
-                                        <img src="/static/uploads/${post.image_filename}" alt="User post">
-                                        <div class="post-info">
-                                            <p class="post-body">${post.body || ''}</p>
-                                            <p class="post-meta">
-                                                Posted by ${post.author_username}
-                                            </p>
-                                        </div>
-                                    </div>
-                                `;
+                            posts.slice(0, 5).forEach(post => { // 最大5枚表示
+                                imagesHtml += `<img src="/static/uploads/${post.image_filename}" class="popup-scroll-image">`;
                             });
-                            content += '</div>';
                         } else {
-                            content += '<p>まだ投稿がありません。</p>';
+                            imagesHtml = '<p>No images yet.</p>';
                         }
-                        detailsContainer.innerHTML = content;
+
+                        // ポップアップのHTMLコンテンツを生成
+                        const popupContent = `
+                            <div class="custom-popup">
+                                <h3>${shopName}</h3>
+                                <div class="popup-image-scroller">
+                                    ${imagesHtml}
+                                </div>
+                                <a href="/shop/${shopId}" class="popup-details-link">View all posts</a>
+                            </div>
+                        `;
+
+                        // ポップアップを作成して表示
+                        L.popup({ minWidth: 280 })
+                            .setLatLng(latlng)
+                            .setContent(popupContent)
+                            .openOn(map);
                     });
             }
 
@@ -98,11 +108,11 @@
             }
 
             // --- イベントリスナー ---
-            ourShopsLayer.on('click', e => displayShopDetails(e.layer.feature.properties.id, e.layer.feature.properties.name));
+            ourShopsLayer.on('click', e => openShopPopup(e.latlng, e.layer.feature.properties.id, e.layer.feature.properties.name));
             osmShopsLayer.on('click', e => {
-                // OSMデータピンのクリックイベント（将来的に投稿を促す機能などを追加）
                 const shopName = e.layer.feature.properties.name || '名前不明';
-                detailsContainer.innerHTML = `<h2>${shopName}</h2><p>まだこのお店の投稿はありません。最初の投稿者になりましょう！</p><a href="/create_post?shop_name=${shopName}">投稿する</a>`;
+                const link = `<a href="/create_post?shop_name=${encodeURIComponent(shopName)}">Be the first to post!</a>`;
+                e.target.bindPopup(`<b>${shopName}</b><br>No posts yet. ${link}`).openPopup();
             });
 
             // --- 初期表示 ---

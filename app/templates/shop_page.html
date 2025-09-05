@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ shop.name }}</h1>
+    <p>All posts for this shop.</p>
+
+    <div class="post-grid">
+        {% for post in posts %}
+            <div class="post-card">
+                <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                <div class="post-info">
+                    <p class="post-body">{{ post.body or '' }}</p>
+                    <p class="post-meta">
+                        Posted by {{ post.author.username }}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
