@@ -66,7 +66,11 @@
                         `;
 
                         // ポップアップを作成して表示
-                        L.popup({ minWidth: 280 })
+                        L.popup({ 
+                            minWidth: 280,
+                            // マップが自動で動く際に、左上に余白(検索欄の高さ分)を考慮させる
+                            autoPanPaddingTopLeft: L.point(0, 70) 
+                        })
                             .setLatLng(latlng)
                             .setContent(popupContent)
                             .openOn(map);

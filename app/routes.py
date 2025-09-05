@@ -406,3 +406,10 @@ def unlike(post_id):
     current_user.unlike_post(post)
     db.session.commit()
     return jsonify({'status': 'ok', 'likes_count': post.likers.count()})
+
+@app.route('/shop/<int:shop_id>')
+@login_required
+def shop_page(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    posts = shop.posts.order_by(Post.timestamp.desc()).all()
+    return render_template('shop_page.html', title=shop.name, shop=shop, posts=posts)

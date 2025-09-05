@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
+
 {% block content %}
-    <h1>Create a New Post</h1>
+<div class="form-container">
+    <h1>新しい投稿を作成</h1>
 
     <form action="" method="post" novalidate enctype="multipart/form-data">
         {{ form.hidden_tag() }}
@@ -10,37 +12,38 @@
         {{ form.shop_latitude }}
         {{ form.shop_longitude }}
         <div style="display: none;">{{ form.shop_name }}</div>
-        
-        <div style="margin-bottom: 20px;">
-            <p><strong>Step 1: Search and select a shop on the map</strong></p>
-            <div>
-                <input type="text" id="shop_search_input" size="40" placeholder="Enter shop name and click search">
-                <button type="button" onclick="searchShopOnMap()">Search</button>
+
+        <div class="form-step">
+            <h2><span class="step-number">1</span>お店を検索して選択</h2>
+            <div class="search-wrapper">
+                <input type="text" id="shop_search_input" placeholder="お店の名前を入力してください">
+                <button type="button" onclick="searchShopOnMap()">検索</button>
             </div>
-            <div id="post-map" style="height: 300px; width: 100%; margin-top: 10px; border-radius: 8px;"></div>
-            
+            <div id="post-map"></div>
             <div id="selected-shop-display">
-                <p><strong>Selected Shop:</strong> <span id="selected-shop-name">None</span></p>
+                <p><strong>選択したお店:</strong> <span id="selected-shop-name">地図上のピンを選択してください</span></p>
             </div>
         </div>
 
-        <p><strong>Step 2: Upload your photo and comment</strong></p>
-        <p>
-            {{ form.image.label }}<br>
-            {{ form.image }}<br>
-            {% for error in form.image.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.comment.label }}<br>
-            {{ form.comment(rows=4, cols=50) }}<br>
-            {% for error in form.comment.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>{{ form.submit() }}</p>
+        <div class="form-step">
+            <h2><span class="step-number">2</span>写真とコメントを追加</h2>
+            <div class="form-group">
+                {{ form.image.label }}<br>
+                {{ form.image(class="file-input") }}
+                {% for error in form.image.errors %}<span class="error-msg">[{{ error }}]</span>{% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.comment.label }}<br>
+                {{ form.comment(class="textarea-input") }}
+                {% for error in form.comment.errors %}<span class="error-msg">[{{ error }}]</span>{% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-submit-area">
+            {{ form.submit(class="submit-btn") }}
+        </div>
     </form>
+</div>
 {% endblock %}
 
 

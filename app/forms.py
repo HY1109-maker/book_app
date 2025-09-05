@@ -33,15 +33,15 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 class PostForm(FlaskForm):
-    image = FileField('Image', validators=[
+    # ▼▼▼ ラベルを日本語に変更 ▼▼▼
+    image = FileField('写真を選択', validators=[
         FileRequired(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], '画像ファイルのみ選択できます')
     ])
-    shop_name = StringField('Shop Name', validators=[DataRequired()])
-    comment = TextAreaField('Comment', validators=[Optional()])
-    submit = SubmitField('Post')
+    shop_name = StringField('お店の名前', validators=[DataRequired()])
+    comment = TextAreaField('コメント', validators=[Optional()])
+    submit = SubmitField('投稿する')
     
-    # ▼▼▼ 以下3つの隠しフィールドを追加 ▼▼▼
     shop_osm_id = HiddenField("OSM ID", validators=[DataRequired()])
     shop_latitude = HiddenField("Latitude", validators=[DataRequired()])
     shop_longitude = HiddenField("Longitude", validators=[DataRequired()])
