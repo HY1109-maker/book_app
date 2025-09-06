@@ -660,3 +660,59 @@ body {
 .timeline-tabs .tab-link { /* プロフィールページのタブとスタイルを共有 */
     font-size: 1.6rem;
 }
+
+/* Post Detail Page Styles */
+.post-detail-container {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.post-detail-card {
+    background-color: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.post-detail-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #efefef;
+}
+
+.post-detail-header a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #262626;
+}
+
+.post-detail-image img {
+    width: 100%;
+    height: auto;
+}
+
+.post-detail-content {
+    padding: 15px;
+}
+
+.post-detail-content p {
+    margin: 0 0 8px 0;
+}
+
+.post-detail-content .shop-link a {
+    color: #00376b;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.post-detail-content .timestamp {
+    font-size: 1.2rem;
+    color: #8e8e8e;
+}
+
+/* タイムラインのカードを囲むリンクのスタイル */
+a.post-card-link {
+    text-decoration: none;
+    color: inherit;
+}

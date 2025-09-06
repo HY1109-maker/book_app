@@ -3,12 +3,11 @@
 {% block content %}
     <h1>Timeline</h1>
     <div class="timeline-tabs">
-        <button class="tab-link active" onclick="changeTimelineFilter('all', this)">For You</button>
-        <button class="tab-link" onclick="changeTimelineFilter('following', this)">Following</button>
+        <button class="tab-link active" data-filter="all">For You</button>
+        <button class="tab-link" data-filter="following">Following</button>
     </div>
 
-    <div class="post-grid" id="timeline-grid">
-        </div>
+    <div class="post-grid" id="timeline-grid"></div>
     
     <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
         <p>Loading more posts...</p>
@@ -24,56 +23,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const timelineGrid = document.getElementById('timeline-grid');
     const loadingIndicator = document.getElementById('loading-indicator');
     const endOfTimelineMessage = document.getElementById('end-of-timeline');
+    const tabs = document.querySelectorAll('.timeline-tabs .tab-link');
     
     let currentPage = 1;
     let isLoading = false;
     let hasMorePages = true;
+    let currentFilter = 'all'; // 'all' or 'following'
 
-    window.changeTimelineFilter = function(newFilter, element) {
-        if (newFilter === timelineFilter) return; // 同じタブなら何もしない
-        
-        timelineFilter = newFilter;
-        // ページの状態をリセット
-        currentPage = 1;
-        hasMorePages = true;
-        timelineGrid.innerHTML = '';
-        document.querySelectorAll('.timeline-tabs .tab-link').forEach(btn => btn.classList.remove('active'));
-        element.classList.add('active');
-        
-        // 新しいフィルターで投稿を再読み込み
-        fetchPosts();
-    }
-
+    // 投稿を取得して表示するメインの関数
     function fetchPosts() {
         if (isLoading || !hasMorePages) return;
         isLoading = true;
         loadingIndicator.style.display = 'block';
 
-        fetch(`/api/timeline?page=${currentPage}&filter=${timelineFilter}`)
+        fetch(`/api/timeline?page=${currentPage}&filter=${currentFilter}`)
             .then(response => response.json())
             .then(data => {
                 const posts = data.posts;
                 posts.forEach(post => {
                     const postCard = `
                         <div class="post-card">
-                            <img src="/static/uploads/${post.image_filename}" alt="User post">
-                            <div class="post-info">
-                                <p class="post-body">${post.body || ''}</p>
-                                <div class="post-actions">
-                                    <div class="like-section">
-                                        <span class="like-btn ${post.is_liked_by_user ? 'liked' : ''}" data-post-id="${post.id}">❤️</span>
-                                        <span class="likes-count">${post.likes_count}</span>
-                                    </div>
-                                    <div>
+                            <a href="/post/${post.id}" class="post-card-link">
+                                <img src="/static/uploads/${post.image_filename}" alt="User post">
+                                <div class="post-info">
+                                    <p class="post-body">${post.body || ''}</p>
+                                    <div class="post-actions">
+                                        <div class="like-section">
+                                            <span class="like-btn ${post.is_liked_by_user ? 'liked' : ''}" data-post-id="${post.id}">❤️</span>
+                                            <span class="likes-count">${post.likes_count}</span>
+                                        </div>
                                         <p class="post-meta">
-                                            Posted by ${post.author_username}
-                                        </p>
-                                        <p class="post-meta">
-                                            at ${post.shop_name}
+                                            by ${post.author_username} at ${post.shop_name}
                                         </p>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     `;
                     timelineGrid.insertAdjacentHTML('beforeend', postCard);
@@ -84,38 +68,60 @@ document.addEventListener('DOMContentLoaded', function () {
                     endOfTimelineMessage.style.display = 'block';
                 }
                 currentPage++;
-                
-                loadingIndicator.style.display = 'none';
-                isLoading = false;
             })
-            .catch(error => {
-                console.error('Error fetching timeline posts:', error);
-                loadingIndicator.textContent = 'Failed to load posts.';
+            .catch(error => console.error('Error fetching timeline:', error))
+            .finally(() => {
+                // 成功しても失敗しても、ローディング表示は必ず消す
                 isLoading = false;
+                loadingIndicator.style.display = 'none';
             });
     }
 
+    // タブがクリックされた時の処理
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const newFilter = tab.dataset.filter;
+            if (newFilter === currentFilter) return;
+
+            // 状態をリセット
+            currentFilter = newFilter;
+            currentPage = 1;
+            hasMorePages = true;
+            timelineGrid.innerHTML = '';
+            endOfTimelineMessage.style.display = 'none';
+            
+            // タブのアクティブ状態を切り替え
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 新しいフィルターで投稿を読み込み
+            fetchPosts();
+        });
+    });
+
     // 「いいね！」ボタンのクリック処理 (イベント委譲)
     timelineGrid.addEventListener('click', function(event) {
-        const likeBtn = event.target.closest('.like-btn');
-        if (!likeBtn) return;
+        const target = event.target;
+        // aタグのクリックを妨害しないようにする
+        if (target.closest('.like-btn')) {
+            event.preventDefault(); // ページ遷移をキャンセル
+            const likeBtn = target.closest('.like-btn');
+            const postId = likeBtn.dataset.postId;
+            const isLiked = likeBtn.classList.contains('liked');
+            const apiUrl = isLiked ? `/unlike/${postId}` : `/like/${postId}`;
 
-        const postId = likeBtn.dataset.postId;
-        const isLiked = likeBtn.classList.contains('liked');
-        const apiUrl = isLiked ? `/unlike/${postId}` : `/like/${postId}`;
-
-        fetch(apiUrl, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    likeBtn.classList.toggle('liked');
-                    const likesCountSpan = likeBtn.nextElementSibling;
-                    if (likesCountSpan) {
-                        likesCountSpan.textContent = data.likes_count;
+            fetch(apiUrl, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        likeBtn.classList.toggle('liked');
+                        const likesCountSpan = likeBtn.nextElementSibling;
+                        if (likesCountSpan) {
+                            likesCountSpan.textContent = data.likes_count;
+                        }
                     }
-                }
-            })
-            .catch(error => console.error('Error liking/unliking post:', error));
+                });
+        }
     });
 
     // スクロールイベントの監視

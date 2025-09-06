@@ -47,10 +47,13 @@ class User(UserMixin, db.Model):
             followers.c.followed_id == user.id).count() > 0
     
     def followed_posts(self):
+        # フォローしているユーザーの投稿を取得
         followed = Post.query.join(
             followers, (followers.c.followed_id == Post.user_id)).filter(
                 followers.c.follower_id == self.id)
+        # 自分の投稿も取得
         own = Post.query.filter_by(user_id=self.id)
+        # 2つのクエリを結合して返す
         return followed.union(own)
 
 

@@ -512,3 +512,11 @@ def following(username):
     user = User.query.filter_by(username=username).first_or_404()
     users = user.followed.all()
     return render_template('follow_list.html', title=f'Following by {user.username}', users=users, user=user)
+
+
+@app.route('/post/<int:post_id>')
+@login_required
+def post_detail(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post_detail.html', title=f"Post by {post.author.username}", post=post)
+

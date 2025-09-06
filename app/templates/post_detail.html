@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="post-detail-container">
+    <div class="post-detail-card">
+        <div class="post-detail-header">
+            <a href="{{ url_for('user_profile', username=post.author.username) }}">
+                <div class="avatar-circle">
+                    <span>{{ post.author.username[0]|upper }}</span>
+                </div>
+                <strong>{{ post.author.username }}</strong>
+            </a>
+        </div>
+        <div class="post-detail-image">
+            <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+        </div>
+        <div class="post-detail-content">
+            <div class="like-section" style="margin-bottom: 10px;">
+                <span class="like-btn {% if current_user.has_liked_post(post) %}liked{% endif %}" data-post-id="{{ post.id }}">❤️</span>
+                <span class="likes-count">{{ post.likers.count() }}</span>
+            </div>
+            <p><strong>{{ post.author.username }}</strong>: {{ post.body or '' }}</p>
+            <p class="shop-link">at <a href="{{ url_for('shop_page', shop_id=post.shop.id) }}">{{ post.shop.name }}</a></p>
+            <p class="timestamp">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block head_extra %}
+<script>
+// いいね機能のJavaScript (タイムラインページとほぼ同じ)
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.post-detail-container');
+    container.addEventListener('click', function(event) {
+        const likeBtn = event.target.closest('.like-btn');
+        if (!likeBtn) return;
+
+        const postId = likeBtn.dataset.postId;
+        const isLiked = likeBtn.classList.contains('liked');
+        const apiUrl = isLiked ? `/unlike/${postId}` : `/like/${postId}`;
+
+        fetch(apiUrl, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    likeBtn.classList.toggle('liked');
+                    const likesCountSpan = likeBtn.nextElementSibling;
+                    if (likesCountSpan) {
+                        likesCountSpan.textContent = data.likes_count;
+                    }
+                }
+            });
+    });
+});
+</script>
+{% endblock %}
