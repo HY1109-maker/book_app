@@ -460,3 +460,74 @@ body {
 .submit-btn:hover {
     background-color: #ad001a;
 }
+
+/* ▼▼▼ 末尾に追記 ▼▼▼ */
+
+/* Profile Dropdown Styles */
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e60023; /* メインカラー */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+.avatar-circle.large {
+    width: 48px;
+    height: 48px;
+    font-size: 2.4rem;
+}
+
+.dropdown-content {
+    display: none; /* 通常時は非表示 */
+    position: absolute;
+    right: 0;
+    top: 50px;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1001;
+    border-radius: 8px;
+    padding: 10px;
+}
+.dropdown-content.show {
+    display: block; /* .showクラスが付いたら表示 */
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    border-radius: 4px;
+}
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}

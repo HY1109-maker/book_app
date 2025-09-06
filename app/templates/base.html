@@ -33,19 +33,25 @@
                 <a href="{{ url_for('index')}}"><img class="logo" src="{{ url_for('static', filename='/imgs/logo_img.png')}}" alt="Foodies fan"></a>
             </div>
             <div class="login-box">
-                
-                
                 {% if current_user.is_anonymous %}
-                <a href="{{ url_for('login') }}">Log In</a>
-                <div class="icon-box">
-                    <img src="{{ url_for('static', filename='/imgs/icon_holder.png') }}" alt="">
-                </div>
+                    <a href="{{ url_for('login') }}" class="login-btn">Log In</a>
                 {% else %}
-                <!-- <a href="{{ url_for('index') }}">Home</a>
-                <a href="{{ url_for('timeline') }}">Timeline</a>
-                <a href="{{ url_for('create_post') }}">New Post</a> -->
-                <span>{{ current_user.username }}</span>
-                <a href="{{ url_for('logout') }}">Logout</a>
+                    <div class="profile-dropdown">
+                        <button class="profile-btn">
+                            <div class="avatar-circle">
+                                <span>{{ current_user.username[0]|upper }}</span>
+                            </div>
+                        </button>
+                        <div class="dropdown-content">
+                            <div class="dropdown-header">
+                                <div class="avatar-circle large">
+                                    <span>{{ current_user.username[0]|upper }}</span>
+                                </div>
+                                <strong>{{ current_user.username }}</strong>
+                            </div>
+                            <a href="#">Your Posts</a> <a href="{{ url_for('logout') }}">Logout</a>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -88,4 +94,23 @@
         </nav>
         {% endif %}
     </body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileBtn = document.querySelector('.profile-btn');
+            if (profileBtn) {
+                const dropdown = profileBtn.nextElementSibling;
+                profileBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+
+                // ドロップダウンの外側をクリックしたら閉じる
+                window.addEventListener('click', function(event) {
+                    if (!profileBtn.contains(event.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            }
+        });
+    </script>
 </html>
