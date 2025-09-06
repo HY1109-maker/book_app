@@ -11,6 +11,13 @@ likes = db.Table('likes',
                  db.Column('user_id', db.Integer, db.ForeignKey('user.id', name='fk_likes_user_id')),
                  db.Column('post_id', db.Integer, db.ForeignKey('post.id', name='fk_likes_post_id')))
 
+
+followers = db.Table('followers',
+    db.Column('follower_id', db.Integer, db.ForeignKey('user.id', name='fk_followers_follower_id')),
+    db.Column('followed_id', db.Integer, db.ForeignKey('user.id', name='fk_followers_followed_id'))
+)
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True, nullable=False)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
@@ -20,6 +27,32 @@ class User(UserMixin, db.Model):
 
     # liked_post
     liked_posts = db.relationship('Post', secondary=likes, back_populates='likers', lazy='dynamic')
+
+    followed = db.relationship(
+        'User', secondary=followers,
+        primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followed_id == id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
+    
+    def follow(self, user):
+        if not self.is_following(user):
+            self.followed.append(user)
+
+    def unfollow(self, user):
+        if self.is_following(user):
+            self.followed.remove(user)
+
+    def is_following(self, user):
+        return self.followed.filter(
+            followers.c.followed_id == user.id).count() > 0
+    
+    def followed_posts(self):
+        followed = Post.query.join(
+            followers, (followers.c.followed_id == Post.user_id)).filter(
+                followers.c.follower_id == self.id)
+        own = Post.query.filter_by(user_id=self.id)
+        return followed.union(own)
+
 
     # helper methods for making "like function"
     def like_post(self, post):

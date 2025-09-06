@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="avatar-circle large">
+            <span>{{ user.username[0]|upper }}</span>
+        </div>
+        <div class="profile-info">
+            <h1>{{ user.username }}</h1>
+            
+            <div class="profile-stats">
+                <a href="{{ url_for('user_profile', username=user.username) }}">
+                    <strong>{{ user.posts.count() }}</strong> posts
+                </a>
+                <a href="{{ url_for('followers', username=user.username) }}">
+                    <strong><span id="followers-count">{{ user.followers.count() }}</span></strong> followers
+                </a>
+                <a href="{{ url_for('following', username=user.username) }}">
+                    <strong>{{ user.followed.count() }}</strong> following
+                </a>
+            </div>
+
+            {% if user != current_user %}
+                <div id="follow-btn-container">
+                    {% if current_user.is_following(user) %}
+                        <button class="follow-btn unfollow" onclick="toggleFollow('{{ user.username }}')">Unfollow</button>
+                    {% else %}
+                        <button class="follow-btn" onclick="toggleFollow('{{ user.username }}')">Follow</button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <button class="tab-link active" onclick="openTab(event, 'grid')">
+            <i class="fa-solid fa-grip"></i> Grid
+        </button>
+        <button class="tab-link" onclick="openTab(event, 'map')">
+            <i class="fa-solid fa-map-location-dot"></i> Map
+        </button>
+    </div>
+
+    <div id="grid" class="tab-content" style="display: block;">
+        <div class="post-grid">
+            {% for post in posts %}
+                <div class="post-card">
+                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                    <div class="post-info">
+                        <p class="post-body">{{ post.body or '' }}</p>
+                        <p class="post-meta">at {{ post.shop.name }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="map" class="tab-content">
+        <div id="profile-map-container" style="height: 500px; width: 100%;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head_extra %}
+<script>
+// ▼▼▼ 既存のopenTab関数を、以下の内容に置き換える ▼▼▼
+
+let profileMap; // マップオブジェクトを保持する変数
+let mapInitialized = false; // マップが初期化されたかを管理するフラグ
+
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tab-link");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+
+    // --- ここからが追加部分 ---
+    // もしクリックされたのがMapタブで、まだ地図が初期化されていなければ
+    if (tabName === 'map' && !mapInitialized) {
+        initProfileMap();
+        mapInitialized = true;
+    }
+}
+
+function initProfileMap() {
+    // 1. 地図を初期化
+    profileMap = L.map('profile-map-container').setView([35.0116, 135.7681], 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(profileMap);
+
+    // 2. このユーザーのお店情報をAPIから取得
+    const username = "{{ user.username }}"; // Jinja2で現在のページのユーザー名を取得
+    fetch(`/api/user/${username}/shops`)
+        .then(response => response.json())
+        .then(data => {
+            
+
+            if (data.features.length > 0) {
+                // 3. 取得したデータでマーカーを立てる
+                const markers = L.geoJSON(data, {
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties && feature.properties.name) {
+                            layer.bindPopup(feature.properties.name);
+                        }
+                    }
+                }).addTo(profileMap);
+                
+                // 4. 全てのマーカーが収まるように地図の表示範囲を自動調整
+                profileMap.fitBounds(markers.getBounds().pad(0.1));
+            }
+        });
+}
+
+function toggleFollow(username) {
+    const btnContainer = document.getElementById('follow-btn-container');
+    const followBtn = btnContainer.querySelector('.follow-btn');
+    const isFollowing = followBtn.classList.contains('unfollow');
+    const apiUrl = isFollowing ? `/unfollow/${username}` : `/follow/${username}`;
+
+    fetch(apiUrl, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                // ボタンの見た目をリアルタイムで更新
+                followBtn.classList.toggle('unfollow');
+                followBtn.textContent = isFollowing ? 'Follow' : 'Unfollow';
+                // フォロワー数を更新
+                document.getElementById('followers-count').textContent = data.followers_count;
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

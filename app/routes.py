@@ -333,6 +333,7 @@ def api_timeline():
     page = request.args.get('page', 1, type=int)
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
+    filter_mode = request.args.get('filter', 'all')
     POSTS_PER_PAGE = 9
 
     # 1. まずはDBで30日以内の投稿に絞り込む（パフォーマンスのため）
@@ -340,7 +341,14 @@ def api_timeline():
     base_query = Post.query.filter(Post.timestamp >= recent_date_naive)
 
     # 2. ページネーションを適用
-    pagination = base_query.order_by(Post.timestamp.desc()).paginate(
+    if filter_mode == 'following':
+        # フォローしているユーザーの投稿だけを取得するクエリ
+        base_query = current_user.followed_posts().order_by(Post.timestamp.desc())
+    else:
+        # これまで通り、全ての投稿を取得するクエリ
+        base_query = Post.query.order_by(Post.timestamp.desc())
+
+    pagination = base_query.paginate(
         page=page, per_page=POSTS_PER_PAGE, error_out=False
     )
     posts_on_page = pagination.items
@@ -417,3 +425,90 @@ def shop_page(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     posts = shop.posts.order_by(Post.timestamp.desc()).all()
     return render_template('shop_page.html', title=shop.name, shop=shop, posts=posts)
+
+
+@app.route('/user/<username>')
+@login_required
+def user_profile(username):
+    # URLで指定されたusernameを持つユーザーをデータベースから探す
+    # 見つからなかった場合は404エラーを返す
+    user = User.query.filter_by(username=username).first_or_404()
+    
+    # そのユーザーの投稿を新しい順に取得
+    posts = user.posts.order_by(Post.timestamp.desc()).all()
+    
+    return render_template('user_profile.html', title=f"{user.username}'s Profile", user=user, posts=posts)
+
+@app.route('/api/user/<username>/shops')
+@login_required
+def get_user_shops(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    
+    # ユーザーの投稿から、ユニークなお店のリストを取得
+    shops = set(post.shop for post in user.posts)
+    
+    features = []
+    for shop in shops:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [shop.longitude, shop.latitude]
+            },
+            "properties": {
+                "id": shop.id,
+                "name": shop.name
+            }
+        })
+    
+    return jsonify({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+
+@app.route('/follow/<username>', methods=['POST'])
+@login_required
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user == current_user:
+        return jsonify({'status': 'error', 'message': 'You cannot follow yourself!'}), 400
+    current_user.follow(user)
+    db.session.commit()
+    return jsonify({
+        'status': 'ok',
+        'message': f'You are now following {username}.',
+        'followers_count': user.followers.count()
+    })
+
+@app.route('/unfollow/<username>', methods=['POST'])
+@login_required
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user == current_user:
+        return jsonify({'status': 'error', 'message': 'You cannot unfollow yourself!'}), 400
+    current_user.unfollow(user)
+    db.session.commit()
+    return jsonify({
+        'status': 'ok',
+        'message': f'You have unfollowed {username}.',
+        'followers_count': user.followers.count()
+    })
+
+@app.route('/user/<username>/followers')
+@login_required
+def followers(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    users = user.followers.all()
+    return render_template('follow_list.html', title=f'Followers of {user.username}', users=users, user=user)
+
+@app.route('/user/<username>/following')
+@login_required
+def following(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    users = user.followed.all()
+    return render_template('follow_list.html', title=f'Following by {user.username}', users=users, user=user)

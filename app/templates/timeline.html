@@ -2,6 +2,11 @@
 
 {% block content %}
     <h1>Timeline</h1>
+    <div class="timeline-tabs">
+        <button class="tab-link active" onclick="changeTimelineFilter('all', this)">For You</button>
+        <button class="tab-link" onclick="changeTimelineFilter('following', this)">Following</button>
+    </div>
+
     <div class="post-grid" id="timeline-grid">
         </div>
     
@@ -24,12 +29,27 @@ document.addEventListener('DOMContentLoaded', function () {
     let isLoading = false;
     let hasMorePages = true;
 
+    window.changeTimelineFilter = function(newFilter, element) {
+        if (newFilter === timelineFilter) return; // 同じタブなら何もしない
+        
+        timelineFilter = newFilter;
+        // ページの状態をリセット
+        currentPage = 1;
+        hasMorePages = true;
+        timelineGrid.innerHTML = '';
+        document.querySelectorAll('.timeline-tabs .tab-link').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+        
+        // 新しいフィルターで投稿を再読み込み
+        fetchPosts();
+    }
+
     function fetchPosts() {
         if (isLoading || !hasMorePages) return;
         isLoading = true;
         loadingIndicator.style.display = 'block';
 
-        fetch(`/api/timeline?page=${currentPage}`)
+        fetch(`/api/timeline?page=${currentPage}&filter=${timelineFilter}`)
             .then(response => response.json())
             .then(data => {
                 const posts = data.posts;

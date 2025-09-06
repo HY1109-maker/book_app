@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="follow-list-container">
+    <h1>{{ title }}</h1>
+    <a href="{{ url_for('user_profile', username=user.username) }}">&larr; Back to profile</a>
+    
+    <div class="user-list">
+        {% if users %}
+            {% for u in users %}
+                <div class="user-list-item">
+                    <a href="{{ url_for('user_profile', username=u.username) }}">
+                        <div class="avatar-circle">
+                            <span>{{ u.username[0]|upper }}</span>
+                        </div>
+                        <span class="username">{{ u.username }}</span>
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No users to display.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

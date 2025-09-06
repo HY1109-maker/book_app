@@ -49,7 +49,7 @@
                                 </div>
                                 <strong>{{ current_user.username }}</strong>
                             </div>
-                            <a href="#">Your Posts</a> <a href="{{ url_for('logout') }}">Logout</a>
+                            <a href="{{ url_for('user_profile', username=current_user.username) }}">Your Posts</a> <a href="{{ url_for('logout') }}">Logout</a>
                         </div>
                     </div>
                 {% endif %}
