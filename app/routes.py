@@ -169,6 +169,10 @@ def search_shops():
             "query": overpass_query
         }), 500
 
+@app.context_processor
+def inject_user():
+    return dict(current_user=current_user)
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()

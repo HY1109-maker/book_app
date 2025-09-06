@@ -86,6 +86,7 @@ a {
 
 #search-box-container {
     position: absolute; /* 地図の上に浮かせる */
+    /* height: 20px; */
     top: 10px;
     left: 50%;
     transform: translateX(-50%); /* 中央揃えにするテクニック */
@@ -102,6 +103,7 @@ a {
     outline: none;
     padding: 8px;
     width: 250px;
+    /* height: 5px; */
     font-size: 1.4rem;
     background-color: #e5eaf3;
     opacity: 0.7;
@@ -109,7 +111,7 @@ a {
 
 #search-box-container button {
     border: none;
-    background-color: #8a94a4; /* Google Map風の青色 */
+    background-color: #e5eaf3; /* Google Map風の青色 */
     color: white;
     padding: 8px 12px;
     cursor: pointer;
@@ -122,6 +124,10 @@ a {
 
 #custom-marker-app {
     font-size: larger;
+}
+
+#search-box-container button .fa-magnifying-glass {
+    font-size: 1.6rem; /* アイコンの大きさを調整 */
 }
 
 /* ▼▼▼ 末尾に追記 ▼▼▼ */
@@ -351,7 +357,6 @@ body {
     text-decoration: none;
 }
 
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
 
 /* Create Post Page Styles */
 .form-container {
