@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
 
     # liked_post
     liked_posts = db.relationship('Post', secondary=likes, back_populates='likers', lazy='dynamic')
+    comments = db.relationship('Comment', back_populates='author', lazy='dynamic')
 
     followed = db.relationship(
         'User', secondary=followers,
@@ -93,6 +94,7 @@ class Post(db.Model):
 
     # likers
     likers = db.relationship('User', secondary = likes, back_populates='liked_posts', lazy='dynamic')
+    comments = db.relationship('Comment', back_populates='post', lazy='dynamic', cascade='all, delete-orphan')
 
 
     def __repr__(self):
@@ -112,3 +114,18 @@ class Shop(db.Model):
 
     def __repr__(self):
         return f'<Shop {self.name}>'
+    
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(140), nullable=False)
+    timestamp = db.Column(db.DateTime, index=True, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_comment_user_id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id', name='fk_comment_user_id'), nullable=False)
+
+    author = db.relationship('User', back_populates='comments')
+    post = db.relationship('Post', back_populates='comments')
+
+    def __repr__(self):
+        return f'<Comment {self.body}>'

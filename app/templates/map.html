@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <div id="search-box-container">
+        <input type="text" id="searchInput" value="カフェ" placeholder="場所やジャンルを検索...">
+        <button onclick="searchMap()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <div class="map-filter">
+            <input type="checkbox" id="posts-only-filter">
+            <label for="posts-only-filter">投稿があるお店のみ</label>
+        </div>
+    </div>
+
     <div id="map-container">
         <div id="map"></div>
-        <div id="search-box-container">
-            <input type="text" id="searchInput" value="カフェ" placeholder="場所やジャンルを検索...">
-            <button onclick="searchMap()">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-        </div>
-        <div id="shop-details-container">
-             <p class="placeholder-text">お店のピンをクリックすると投稿が表示されます</p>
-        </div>
     </div>
 {% endblock %}
 
@@ -29,6 +31,8 @@
                     searchMap();
                 }
             });
+
+            const postsOnlyFilter = document.getElementById('posts-only-filter');
 
             // ▼▼▼ createOurShopMarker関数をAwesomeMarkersを使うように書き換える ▼▼▼
             function createOurShopMarker(feature, latlng) {
@@ -116,6 +120,8 @@
                                     feature => !ourShopOsmIds.has(feature.properties.osm_id)
                                 );
                                 osmShopsLayer.addData({ type: "FeatureCollection", features: filteredFeatures });
+
+                                applyMapFilter();
                             });
                     });
             }
