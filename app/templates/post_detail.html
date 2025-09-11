@@ -24,7 +24,33 @@
             <p class="timestamp">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
         </div>
     </div>
+    <div class="comments-section">
+        <h2>コメント ({{ comments|length }})</h2>
+        
+        <form action="" method="post" class="comment-form">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.comment_body(class="textarea-input", placeholder="コメントを加える...") }}
+                {{ form.submit(class="submit-btn small") }}
+            </div>
+        </form>
+
+        <div class="comment-list">
+            {% for comment in comments %}
+                <div class="comment-item">
+                    <a href="{{ url_for('user_profile', username=comment.author.username) }}" class="comment-author">
+                        <div class="avatar-circle small">
+                            <span>{{ comment.author.username[0]|upper }}</span>
+                        </div>
+                        <strong>{{ comment.author.username }}</strong>
+                    </a>
+                    <p class="comment-body">{{ comment.body }}</p>
+                    <span class="comment-timestamp">{{ comment.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            {% endfor %}
+        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block head_extra %}

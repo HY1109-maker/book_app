@@ -1,0 +1,21 @@
+            <a href="{{ url_for('post_detail', post_id=post.id) }}" class="post-card-link">
+                <div class="post-card">
+                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                    <div class="post-info">
+                        <p class="post-body-overlay">{{ post.body or '' }}</p>
+                        <div class="post-actions-overlay">
+                            <div class="like-section">
+                                <i class="fa-solid fa-heart like-icon {% if current_user.is_authenticated and current_user.has_liked_post(post) %}liked{% endif %}" data-post-id="{{ post.id }}"></i>
+                                <span class="likes-count">{{ post.likers.count() }}</span>
+                            </div>
+                            <div class="comment-section">
+                                <i class="fa-solid fa-comment comment-icon"></i>
+                                <span class="comments-count">{{ post.comments.count() }}</span>
+                            </div>
+                        </div>
+                        <p class="post-meta-overlay">
+                            by {{ post.author.username }} at {{ post.shop.name }}
+                        </p>
+                    </div>
+                </div>
+            </a>

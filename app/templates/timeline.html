@@ -28,9 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     let isLoading = false;
     let hasMorePages = true;
-    let currentFilter = 'all'; // 'all' or 'following'
+    let currentFilter = 'all';
 
-    // 投稿を取得して表示するメインの関数
     function fetchPosts() {
         if (isLoading || !hasMorePages) return;
         isLoading = true;
@@ -42,23 +41,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 const posts = data.posts;
                 posts.forEach(post => {
                     const postCard = `
-                        <div class="post-card">
-                            <a href="/post/${post.id}" class="post-card-link">
-                                <img src="/static/uploads/${post.image_filename}" alt="User post">
-                                <div class="post-info">
-                                    <p class="post-body">${post.body || ''}</p>
-                                    <div class="post-actions">
-                                        <div class="like-section">
-                                            <span class="like-btn ${post.is_liked_by_user ? 'liked' : ''}" data-post-id="${post.id}">❤️</span>
-                                            <span class="likes-count">${post.likes_count}</span>
+                             <div class="post-card">
+                                <a href="/post/${post.id}" class="post-card-link">
+                                    <img src="/static/uploads/${post.image_filename}" alt="User post">
+                                    <div class="post-info"> 
+                                        <p class="post-body-overlay">${post.body || ''}</p>
+                                        <div class="post-actions-overlay">
+                                            <div class="like-section">
+                                                <i class="fa-solid fa-heart like-icon ${post.is_liked_by_user ? 'liked' : ''}" data-post-id="${post.id}"></i>
+                                                <span class="likes-count">${post.likes_count}</span>
+                                            </div>
+                                            <div class="comment-section">
+                                                <i class="fa-solid fa-comment comment-icon"></i>
+                                                <span class="comments-count">${post.comments_count}</span>
+                                            </div>
                                         </div>
-                                        <p class="post-meta">
+                                        <p class="post-meta-overlay">
                                             by ${post.author_username} at ${post.shop_name}
                                         </p>
                                     </div>
-                                </div>
-                            </a>
-                        </div>
+                                </a>
+                            </div>
                     `;
                     timelineGrid.insertAdjacentHTML('beforeend', postCard);
                 });
@@ -71,67 +74,35 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => console.error('Error fetching timeline:', error))
             .finally(() => {
-                // 成功しても失敗しても、ローディング表示は必ず消す
                 isLoading = false;
                 loadingIndicator.style.display = 'none';
             });
     }
 
-    // タブがクリックされた時の処理
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const newFilter = tab.dataset.filter;
             if (newFilter === currentFilter) return;
 
-            // 状態をリセット
             currentFilter = newFilter;
             currentPage = 1;
             hasMorePages = true;
             timelineGrid.innerHTML = '';
             endOfTimelineMessage.style.display = 'none';
             
-            // タブのアクティブ状態を切り替え
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             
-            // 新しいフィルターで投稿を読み込み
             fetchPosts();
         });
     });
 
-    // 「いいね！」ボタンのクリック処理 (イベント委譲)
-    timelineGrid.addEventListener('click', function(event) {
-        const target = event.target;
-        // aタグのクリックを妨害しないようにする
-        if (target.closest('.like-btn')) {
-            event.preventDefault(); // ページ遷移をキャンセル
-            const likeBtn = target.closest('.like-btn');
-            const postId = likeBtn.dataset.postId;
-            const isLiked = likeBtn.classList.contains('liked');
-            const apiUrl = isLiked ? `/unlike/${postId}` : `/like/${postId}`;
-
-            fetch(apiUrl, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'ok') {
-                        likeBtn.classList.toggle('liked');
-                        const likesCountSpan = likeBtn.nextElementSibling;
-                        if (likesCountSpan) {
-                            likesCountSpan.textContent = data.likes_count;
-                        }
-                    }
-                });
-        }
-    });
-
-    // スクロールイベントの監視
     window.addEventListener('scroll', () => {
         if ((window.innerHeight + window.scrollY) >= document.documentElement.offsetHeight - 200) {
             fetchPosts();
         }
     });
 
-    // 最初のページを読み込む
     fetchPosts();
 });
 </script>

@@ -1,4 +1,3 @@
-/* font size, font familiar, sameconponent */
 html {
   font-size: 62.5%;
 }
@@ -6,25 +5,22 @@ html {
 body {
     margin: 0 4%;
     font-family: 'Noto serif JP', 'Times New Roman', serif;
-    background-color: white;
+    background-color: #f0f2f5; /* 少し背景色をつけます */
     font-size: 1.6rem;
-    line-height: 1.5; /* 行間も指定しておくと読みやすい */
+    line-height: 1.5;
+    padding-bottom: 70px; /* for bottom nav */
 }
 
-/* 3. clamp()で見出しなどを設定 */
 h1 {
-  /* 最小24px, 推奨5vw, 最大48px */
   font-size: clamp(2.4rem, 5vw, 4.8rem);
 }
 
 h2 {
-  /* 最小20px, 推奨3vw, 最大32px */
   font-size: clamp(2.0rem, 3vw, 3.2rem);
 }
 
 p {
-  /* 段落は画面幅で変えない、もしくは変化を小さくする */
-  font-size: 1.6rem; /* bodyと同じで固定、もしくはclamp()で少しだけ変化させる */
+  font-size: 1.6rem;
 }
 
 a {
@@ -32,6 +28,7 @@ a {
     font-size: clamp(0.1rem, 3vw, 1.2rem);
 }
 
+/* Header Styles */
 .header-box {
     display: flex;
     padding-top: 2px;
@@ -50,9 +47,8 @@ a {
 
 .login-box {
     display: flex;
-    /* justify-content: flex-end; */
     align-items: center;
-    gap: 5px;
+    gap: 15px;
 }
 .login-box a {
     display: block;
@@ -61,22 +57,153 @@ a {
     color: black;
 }
 
-.icon-box {
-    width: 3rem;
-    padding: 0;
-    margin: 0 auto;
+/* Post Grid Styles (for timeline, profile, etc.) */
+.post-grid {
+    column-count: 3;
+    column-gap: 15px;
+    padding: 15px 0;
 }
 
-.icon-box img {
+@media screen and (width <= 900px) {
+    .post-grid {
+        column-count: 2;
+    }
+}
+
+.post-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+    break-inside: avoid;
+    display: inline-block; /* Safariの表示崩れ対策 */
+    width: 100%; /* inline-blockにしたことに伴い幅を再指定 */
+}
+
+.post-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+}
+
+.post-card img {
     width: 100%;
-    border-radius: 100%;
+    height: auto;
+    display: block;
+    /* vertical-align: middle; */
 }
 
-/* for map page */
+/* New Hover Overlay Style */
+.post-info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.post-card-link:hover .post-info {
+    opacity: 1;
+}
+
+.post-actions-overlay {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 15px;
+}
+
+.post-actions-overlay .like-section,
+.post-actions-overlay .comment-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.post-actions-overlay .like-icon,
+.post-actions-overlay .comment-icon {
+    font-size: 2.2rem;
+    color: white;
+    cursor: pointer;
+}
+
+.post-actions-overlay .like-icon {
+    filter: grayscale(1);
+    transition: all 0.2s ease-in-out;
+}
+.post-actions-overlay .like-icon.liked {
+    filter: grayscale(0);
+    color: #ff3040;
+    transform: scale(1.1);
+}
+
+.post-actions-overlay .likes-count,
+.post-actions-overlay .comments-count {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+}
+
+.post-meta-overlay {
+    font-size: 1.4rem;
+    color: #eee;
+    margin: 0;
+    text-align: center;
+}
+
+
+/* Map Page Styles */
+#search-box-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background-color: #f2f2f2;
+    gap: 10px;
+}
+
+#searchInput {
+    border: 1px solid #ccc;
+    outline: none;
+    padding: 8px;
+    width: 250px;
+    font-size: 1.4rem;
+    border-radius: 8px 0 0 8px;
+}
+
+#search-box-container button {
+    border: none;
+    background-color: #4285F4;
+    color: white;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 0 8px 8px 0;
+}
+#search-box-container button .fa-magnifying-glass {
+    font-size: 1.6rem;
+}
+
+.map-filter {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 1.2rem;
+}
+
 #map-container {
-    position: relative; /* 子要素を相対位置で配置するための基準 */
     width: 100%;
-    height: 80vh; /* 地図の高さを画面の80%に設定 */
+    height: 80vh;
 }
 
 #map {
@@ -84,189 +211,298 @@ a {
     height: 100%;
 }
 
-#search-box-container {
+/* Custom Popup Styles */
+.custom-popup .leaflet-popup-content-wrapper {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.custom-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 15px;
+    width: auto !important;
+}
+.custom-popup h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.6rem;
+}
+.popup-image-scroller {
     display: flex;
-    justify-content: center;
-    align-items: center; /* 垂直方向も中央揃え */
-    padding: 10px;
-    background-color: #f2f2f2;
-    gap: 10px; /* 要素間の隙間 */
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 10px;
+}
+.popup-scroll-image {
+    height: 100px;
+    width: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+.popup-details-link {
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+    color: #007bff;
+    text-decoration: none;
 }
 
-#searchInput {
-    border: none;
-    outline: none;
-    padding: 8px;
-    width: 250px;
-    /* height: 5px; */
-    font-size: 1.4rem;
-    background-color: #e5eaf3;
-    opacity: 0.7;
+/* Profile Dropdown Styles */
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
 }
-
-#search-box-container button {
+.profile-btn {
+    background: none;
     border: none;
-    background-color: #e5eaf3; /* Google Map風の青色 */
-    color: white;
-    padding: 8px 12px;
+    padding: 0;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e60023;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+.avatar-circle.large {
+    width: 48px;
+    height: 48px;
+    font-size: 2.4rem;
+}
+.avatar-circle.small {
+    width: 28px;
+    height: 28px;
+    font-size: 1.4rem;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 50px;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1001;
+    border-radius: 8px;
+    padding: 10px;
+}
+.dropdown-content.show {
+    display: block;
+}
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+.dropdown-content a {
+    color: black;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
     border-radius: 4px;
 }
-
-#search-box-container button:hover {
-    background-color: #e5eaf3;
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
 }
 
-#custom-marker-app {
-    font-size: larger;
+/* User Profile Page Styles */
+.profile-container {
+    max-width: 900px;
+    margin: 20px auto;
 }
-
-#search-box-container button .fa-magnifying-glass {
-    font-size: 1.6rem; /* アイコンの大きさを調整 */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 30px;
 }
-
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
-
-/* Post Grid Styles */
-.post-grid {
-    column-count: 3; /* 3列のカラムを作成 */
-    column-gap: 15px; /* カラム間の隙間 */
-    padding: 15px 0;
-    gap: 15px; /* カード間の隙間 */
-    padding: 15px 0;
-}
-
-@media screen and (width <= 900px){
-    .post-grid {
-        column-count: 2; /* 3列のカラムを作成 */
-        column-gap: 15px; /* カラム間の隙間 */
-        padding: 15px 0;
-        gap: 15px; /* カード間の隙間 */
-        padding: 15px 0;
-    }
-}
-
-.post-card {
-    position: relative; /* オーバーレイの基準位置 */
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden; /* 角丸を有効にする */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    cursor: pointer; /* ホバーでインタラクティブ性を示す */
-    break-inside: avoid; /* カードが途中で改ページされないようにする (Masonry-like) */
-    margin-bottom: 15px; /* カード下のマージンを追加 */
-    break-inside: avoid; /* カードがカラムの途中で分割されるのを防ぐ */
-}
-
-.post-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-    transition: transform 0.3s ease-in-out; /* ホバー時の画像拡大アニメーション */
-}
-
-.post-card:hover img {
-    transform: scale(1.05); /* ホバーで画像を少し拡大 */
-}
-
-.post-info {
-    position: absolute; /* 画像の上に重ねる */
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; /* ホバー時は全体を覆う */
-    background: rgba(0, 0, 0, 0.6); /* 半透明の黒背景 */
-    color: white;
-    padding: 15px;
-    box-sizing: border-box; /* paddingを含めてwidth/heightを計算 */
+.profile-info {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* 下揃え */
-    opacity: 0; /* 通常時は非表示 */
-    transition: opacity 0.3s ease-in-out; /* フェードイン/アウト */
+    gap: 15px;
 }
-
-.post-card:hover .post-info {
-    opacity: 1; /* ホバー時に表示 */
-}
-
-.post-body {
-    font-size: 1.4rem;
-    margin: 0 0 8px 0;
-    font-weight: bold;
-}
-
-.post-meta {
-    font-size: 1.2rem;
-    color: #eee;
+.profile-info h1 {
     margin: 0;
 }
-
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
-
-/* Map Page Details Styles */
-#shop-details-container {
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-top: 1px solid #ddd;
-    max-height: 40vh; /* 高さを画面の40%に制限 */
-    overflow-y: auto; /* 内容が多ければスクロールさせる */
-}
-#shop-details-container h2 {
-    margin-top: 0;
-}
-.placeholder-text {
-    color: #888;
-    text-align: center;
-    padding: 20px;
-}
-.posts-grid-for-shop {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-}
-.post-item img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-}
-.post-item p {
-    font-size: 1.2rem;
-    margin: 5px 0 0 0;
-}
-
-
-.post-actions {
+.profile-stats {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
+    gap: 20px;
+    font-size: 1.6rem;
 }
-
-.like-section {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+.profile-stats a {
+    text-decoration: none;
+    color: inherit;
 }
-
-.like-btn {
-    font-size: 2rem;
+.follow-btn {
+    padding: 8px 20px;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    background-color: #0095f6;
+    color: white;
+    font-weight: bold;
     cursor: pointer;
-    filter: grayscale(1); /* 通常時はグレーアウト */
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s;
 }
-
-.like-btn.liked {
-    filter: grayscale(0); /* いいねしたらカラーに */
-    transform: scale(1.2); /* 少し拡大するアニメーション */
+.follow-btn.unfollow {
+    background-color: #efefef;
+    color: black;
 }
-
-.likes-count {
+.follow-btn:hover {
+    opacity: 0.8;
+}
+.profile-tabs, .timeline-tabs {
+    display: flex;
+    border-bottom: 1px solid #dbdbdb;
+    margin-bottom: 20px;
+}
+.timeline-tabs {
+    justify-content: center;
+}
+.tab-link {
+    background: none;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
     font-size: 1.4rem;
+    font-weight: bold;
+    color: #888;
+    border-bottom: 2px solid transparent;
+}
+.timeline-tabs .tab-link {
+    font-size: 1.6rem;
+}
+.tab-link.active {
+    color: #262626;
+    border-bottom: 2px solid #262626;
+}
+.tab-content {
+    display: none;
+}
+
+/* Follow List Page Styles */
+.follow-list-container {
+    max-width: 500px;
+    margin: 20px auto;
+}
+.user-list {
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.user-list-item a {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 15px;
+    text-decoration: none;
+    color: #262626;
+    border-bottom: 1px solid #efefef;
+}
+.user-list-item:last-child a {
+    border-bottom: none;
+}
+.user-list-item a:hover {
+    background-color: #fafafa;
+}
+.user-list-item .username {
     font-weight: bold;
 }
 
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
+/* Post Detail Page Styles */
+.post-detail-container {
+    max-width: 600px;
+    margin: 20px auto;
+}
+.post-detail-card {
+    background-color: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.post-detail-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #efefef;
+}
+.post-detail-header a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #262626;
+}
+.post-detail-image img {
+    width: 100%;
+    height: auto;
+}
+.post-detail-content {
+    padding: 15px;
+}
+.post-detail-content p {
+    margin: 0 0 8px 0;
+}
+.post-detail-content .shop-link a {
+    color: #00376b;
+    font-weight: bold;
+    text-decoration: none;
+}
+.post-detail-content .timestamp {
+    font-size: 1.2rem;
+    color: #8e8e8e;
+}
+
+/* Comments Section Styles */
+.comments-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+}
+.comment-form .form-group {
+    display: flex;
+    gap: 10px;
+}
+.comment-form .textarea-input {
+    flex-grow: 1;
+}
+.comment-form .submit-btn.small {
+    padding: 8px 15px;
+    font-size: 1.4rem;
+    border-radius: 8px;
+}
+.comment-list {
+    margin-top: 20px;
+}
+.comment-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #efefef;
+}
+.comment-item:last-child {
+    border-bottom: none;
+}
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #262626;
+    margin-bottom: 5px;
+}
+.comment-body { margin: 0; }
+.comment-timestamp { font-size: 1.2rem; color: #8e8e8e; }
+
 
 /* Bottom Navigation */
 .bottom-nav {
@@ -283,7 +519,6 @@ a {
     box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
     z-index: 1000;
 }
-
 .nav-link {
     display: flex;
     flex-direction: column;
@@ -293,428 +528,11 @@ a {
     color: #888;
     font-size: 1rem;
 }
-
 .nav-icon {
     width: 28px;
     height: 28px;
     margin-bottom: 2px;
 }
-
 .nav-link:hover {
-    color: #333; /* ホバー時の色 */
-}
-
-/* ページコンテンツがフッターに隠れないように、bodyに下の余白を追加 */
-body {
-    padding-bottom: 70px;
-}
-
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
-
-/* Custom Popup Styles */
-.custom-popup .leaflet-popup-content-wrapper {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-.custom-popup .leaflet-popup-content {
-    margin: 0;
-    padding: 15px;
-    width: auto !important;
-}
-
-.custom-popup h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.6rem;
-}
-
-.popup-image-scroller {
-    display: flex;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 10px; /* スクロールバーのための余白 */
-}
-
-.popup-scroll-image {
-    height: 100px;
-    width: 100px;
-    object-fit: cover;
-    border-radius: 6px;
-}
-
-.popup-details-link {
-    display: block;
-    margin-top: 10px;
-    text-align: center;
-    font-weight: bold;
-    color: #007bff;
-    text-decoration: none;
-}
-
-
-/* Create Post Page Styles */
-.form-container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.form-step {
-    margin-bottom: 25px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 25px;
-}
-
-.form-step h2 {
-    font-size: 1.8rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.step-number {
-    background-color: #333;
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-}
-
-.search-wrapper {
-    display: flex;
-    margin-bottom: 10px;
-}
-
-#shop_search_input {
-    flex-grow: 1;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px 0 0 4px;
-    outline: none;
-}
-
-.search-wrapper button {
-    padding: 8px 15px;
-    border: none;
-    background-color: #333;
-    color: white;
-    cursor: pointer;
-    border-radius: 0 4px 4px 0;
-}
-
-#post-map {
-    height: 300px;
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-}
-
-#selected-shop-display {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f7f7f7;
-    border-radius: 4px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.file-input, .textarea-input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-top: 4px;
-}
-
-.form-submit-area {
-    text-align: center;
-}
-
-.submit-btn {
-    padding: 12px 30px;
-    border: none;
-    background-color: #e60023; /* Pinterest風の赤色 */
-    color: white;
-    font-weight: bold;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 1.6rem;
-    transition: background-color 0.2s;
-}
-
-.submit-btn:hover {
-    background-color: #ad001a;
-}
-
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
-
-/* Profile Dropdown Styles */
-.profile-dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.profile-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-}
-
-.avatar-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #e60023; /* メインカラー */
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.6rem;
-}
-.avatar-circle.large {
-    width: 48px;
-    height: 48px;
-    font-size: 2.4rem;
-}
-
-.dropdown-content {
-    display: none; /* 通常時は非表示 */
-    position: absolute;
-    right: 0;
-    top: 50px;
-    background-color: white;
-    min-width: 200px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1001;
-    border-radius: 8px;
-    padding: 10px;
-}
-.dropdown-content.show {
-    display: block; /* .showクラスが付いたら表示 */
-}
-
-.dropdown-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.dropdown-content a {
-    color: black;
-    padding: 8px 12px;
-    text-decoration: none;
-    display: block;
-    border-radius: 4px;
-}
-.dropdown-content a:hover {
-    background-color: #f1f1f1;
-}
-
-/* ▼▼▼ 末尾に追記 ▼▼▼ */
-
-/* User Profile Page Styles */
-.profile-container {
-    max-width: 900px;
-    margin: 20px auto;
-}
-
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    margin-bottom: 30px;
-}
-
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.profile-info h1 {
-    margin: 0;
-}
-
-.profile-stats {
-    display: flex;
-    gap: 20px;
-    font-size: 2rem;
-}
-
-.follow-btn {
-    padding: 8px 20px;
-    border: 1px solid #dbdbdb;
-    border-radius: 8px;
-    background-color: #0095f6; /* フォローボタンの色 */
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.follow-btn.unfollow {
-    background-color: #efefef; /* アンフォローボタンの色 */
-    color: black;
-}
-
-.follow-btn:hover {
-    opacity: 0.8;
-}
-
-.profile-tabs {
-    display: flex;
-    border-bottom: 1px solid #dbdbdb;
-    margin-bottom: 20px;
-}
-
-.tab-link {
-    background: none;
-    border: none;
-    padding: 15px;
-    cursor: pointer;
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: #888;
-    border-bottom: 2px solid transparent;
-}
-
-.tab-link.active {
-    color: #262626;
-    border-bottom: 2px solid #262626;
-}
-
-.tab-content {
-    display: none; /* デフォルトは非表示 */
-}
-
-/* Follow List Page Styles */
-.follow-list-container {
-    max-width: 500px;
-    margin: 20px auto;
-}
-
-.user-list {
-    margin-top: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.user-list-item a {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    gap: 15px;
-    text-decoration: none;
-    color: #262626;
-    border-bottom: 1px solid #efefef;
-}
-
-.user-list-item:last-child a {
-    border-bottom: none;
-}
-
-.user-list-item a:hover {
-    background-color: #fafafa;
-}
-
-.user-list-item .username {
-    font-weight: bold;
-}
-
-/* profile-statsのリンクスタイル調整 */
-.profile-stats a {
-    text-decoration: none;
-    color: inherit;
-}
-
-/* Timeline Tabs */
-.timeline-tabs {
-    display: flex;
-    justify-content: center;
-    border-bottom: 1px solid #dbdbdb;
-    margin-bottom: 20px;
-}
-.timeline-tabs .tab-link { /* プロフィールページのタブとスタイルを共有 */
-    font-size: 1.6rem;
-}
-
-/* Post Detail Page Styles */
-.post-detail-container {
-    max-width: 600px;
-    margin: 20px auto;
-}
-
-.post-detail-card {
-    background-color: #fff;
-    border: 1px solid #dbdbdb;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.post-detail-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid #efefef;
-}
-
-.post-detail-header a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: #262626;
-}
-
-.post-detail-image img {
-    width: 100%;
-    height: auto;
-}
-
-.post-detail-content {
-    padding: 15px;
-}
-
-.post-detail-content p {
-    margin: 0 0 8px 0;
-}
-
-.post-detail-content .shop-link a {
-    color: #00376b;
-    font-weight: bold;
-    text-decoration: none;
-}
-
-.post-detail-content .timestamp {
-    font-size: 1.2rem;
-    color: #8e8e8e;
-}
-
-/* タイムラインのカードを囲むリンクのスタイル */
-a.post-card-link {
-    text-decoration: none;
-    color: inherit;
-}
-
-.map-filter {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 1.2rem;
+    color: #333;
 }

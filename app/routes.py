@@ -1,9 +1,9 @@
 from app import app # appをインポート
 from flask import render_template, request, jsonify, redirect, flash, url_for
 import requests 
-from app.forms import LoginForm, RegistrationForm,PostForm
+from app.forms import LoginForm, RegistrationForm,PostForm, CommentForm
 from app import db
-from app.models import User, Shop, Post
+from app.models import User, Shop, Post, Comment
 from flask_login import current_user, login_user, logout_user 
 import os
 import uuid
@@ -296,7 +296,8 @@ def get_posts_for_shop(shop_id):
             'id': post.id,
             'body': post.body,
             'image_filename': post.image_filename,
-            'author_username': post.author.username
+            'author_username': post.author.username,
+            'comments_count' : post.comments.count()
         })
     return jsonify(posts_data)
 
@@ -384,7 +385,8 @@ def api_timeline():
         'author_username': post.author.username,
         'shop_name': post.shop.name,
         'likes_count': post.likers.count(),
-        'is_liked_by_user': current_user.has_liked_post(post)
+        'is_liked_by_user': current_user.has_liked_post(post),
+        'comments_count' : post.comments.count()
     } for post in posts]
     
     return jsonify({
@@ -514,9 +516,32 @@ def following(username):
     return render_template('follow_list.html', title=f'Following by {user.username}', users=users, user=user)
 
 
-@app.route('/post/<int:post_id>')
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def post_detail(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('post_detail.html', title=f"Post by {post.author.username}", post=post)
-
+    form = CommentForm()
+    
+    # フォームが送信され、内容が有効だった場合の処理
+    if form.validate_on_submit():
+        comment = Comment(
+            body=form.comment_body.data,
+            post=post,
+            author=current_user
+        )
+        db.session.add(comment)
+        db.session.commit()
+        flash('Your comment has been published.')
+        # 投稿後は同じページにリダイレクトして、フォームの再送信を防ぐ
+        return redirect(url_for('post_detail', post_id=post.id))
+    
+    # この投稿に紐づく全てのコメントを新しい順に取得
+    comments = post.comments.order_by(Comment.timestamp.desc()).all()
+    
+    return render_template(
+        'post_detail.html', 
+        title=f"Post by {post.author.username}", 
+        post=post, 
+        form=form, 
+        comments=comments
+    )

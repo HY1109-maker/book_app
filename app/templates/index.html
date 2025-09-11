@@ -3,23 +3,7 @@
 {% block content %}
     <div class="post-grid">
         {% for post in posts %}
-            <a href="{{ url_for('post_detail', post_id=post.id) }}" class="post-card-link">
-                <div class="post-card">
-                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
-                    <div class="post-info">
-                        <p class="post-body">{{ post.body or '' }}</p>
-                        <div class="post-actions">
-                            <div class="like-section">
-                                <span class="like-btn {% if current_user.is_authenticated and current_user.has_liked_post(post) %}liked{% endif %}" data-post-id="{{ post.id }}">❤️</span>
-                                <span class="likes-count">{{ post.likers.count() }}</span>
-                            </div>
-                            <p class="post-meta">
-                                by {{ post.author.username }} at {{ post.shop.name }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </a>
+            {% include '_post_card.html' %}
         {% endfor %}
     </div>
 {% endblock %}

@@ -93,24 +93,6 @@
             </a>
         </nav>
         {% endif %}
+        <script src="{{ url_for('static', filename = 'js/main.js') }}"></script>
     </body>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const profileBtn = document.querySelector('.profile-btn');
-            if (profileBtn) {
-                const dropdown = profileBtn.nextElementSibling;
-                profileBtn.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    dropdown.classList.toggle('show');
-                });
-
-                // ドロップダウンの外側をクリックしたら閉じる
-                window.addEventListener('click', function(event) {
-                    if (!profileBtn.contains(event.target)) {
-                        dropdown.classList.remove('show');
-                    }
-                });
-            }
-        });
-    </script>
 </html>
