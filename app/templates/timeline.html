@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 const posts = data.posts;
+                if (currentPage === 1) { // 最初のページをロードするときは、既存のコンテンツをクリア
+                    timelineGrid.innerHTML = '';
+                }
                 posts.forEach(post => {
                     const postCard = `
                              <div class="post-card">

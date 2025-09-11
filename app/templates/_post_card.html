@@ -1,6 +1,11 @@
             <a href="{{ url_for('post_detail', post_id=post.id) }}" class="post-card-link">
                 <div class="post-card">
-                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                    {% if post.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">
+                    {% else %}
+                        {# 画像がない場合のフォールバック（例：デフォルト画像やアイコン） #}
+                        <img src="{{ url_for('static', filename='images/default_post_image.png') }}" alt="No image">
+                    {% endif %}
                     <div class="post-info">
                         <p class="post-body-overlay">{{ post.body or '' }}</p>
                         <div class="post-actions-overlay">

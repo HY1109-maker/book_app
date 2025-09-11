@@ -79,6 +79,7 @@ a {
     break-inside: avoid;
     display: inline-block; /* Safariの表示崩れ対策 */
     width: 100%; /* inline-blockにしたことに伴い幅を再指定 */
+    vertical-align: top; /* 上揃えにして隙間を防ぐ */
 }
 
 .post-card-link {
@@ -142,6 +143,7 @@ a {
     filter: grayscale(1);
     transition: all 0.2s ease-in-out;
 }
+
 .like-icon.liked {
     filter: grayscale(0);
     color: #ff3040;
@@ -434,6 +436,9 @@ a {
 .post-detail-header {
     padding: 10px 15px;
     border-bottom: 1px solid #efefef;
+    display: flex; /* Flexboxを有効化 */
+    justify-content: space-between; /* 両端に配置 */
+    align-items: center; /* 垂直方向中央揃え */
 }
 .post-detail-header a {
     display: flex;
@@ -442,6 +447,22 @@ a {
     text-decoration: none;
     color: #262626;
 }
+
+.delete-form {
+    margin: 0;
+}
+.delete-btn {
+    background: none;
+    border: none;
+    color: #8e8e8e;
+    cursor: pointer;
+    font-size: 1.6rem;
+    padding: 5px;
+}
+.delete-btn:hover {
+    color: #ed4956; /* ホバー時に赤色に */
+}
+
 .post-detail-image img {
     width: 100%;
     height: auto;

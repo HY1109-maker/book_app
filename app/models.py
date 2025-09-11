@@ -93,7 +93,7 @@ class Post(db.Model):
     shop = db.relationship('Shop', back_populates='posts')
 
     # likers
-    likers = db.relationship('User', secondary = likes, back_populates='liked_posts', lazy='dynamic')
+    likers = db.relationship('User', secondary=likes, back_populates='liked_posts', lazy='dynamic', cascade="all, delete")
     comments = db.relationship('Comment', back_populates='post', lazy='dynamic', cascade='all, delete-orphan')
 
 

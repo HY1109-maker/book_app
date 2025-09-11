@@ -10,6 +10,13 @@
                 </div>
                 <strong>{{ post.author.username }}</strong>
             </a>
+            {% if post.author == current_user %}
+                <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="delete-form">
+                    <button type="submit" class="delete-btn" onclick="return confirm('本当にこの投稿を削除しますか？')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            {% endif %}
         </div>
         <div class="post-detail-image">
             <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="User post">

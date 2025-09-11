@@ -8,6 +8,7 @@ from flask_login import current_user, login_user, logout_user
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import Forbidden
 from flask_login import login_required
 from datetime import datetime, timedelta, timezone
 from math import radians, cos, sin, asin, sqrt
@@ -545,3 +546,31 @@ def post_detail(post_id):
         form=form, 
         comments=comments
     )
+
+
+@app.route('/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post_to_delete = Post.query.get_or_404(post_id)
+    
+    # 投稿の作者が、現在ログインしているユーザーと一致するかをチェック
+    if post_to_delete.author != current_user:
+        # 一致しない場合は、403 Forbiddenエラーを返す
+        raise Forbidden()
+
+    # データベースから投稿を削除
+    # (Commentモデルのcascade設定により、関連するコメントも自動で削除されます)
+    db.session.delete(post_to_delete)
+    
+    # アップロードされた画像ファイルもサーバーから削除 (任意ですが推奨)
+    try:
+        image_path = os.path.join(app.root_path, 'static/uploads', post_to_delete.image_filename)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+    except Exception as e:
+        print(f"Error deleting image file: {e}") # エラーログを残す
+
+    db.session.commit()
+    flash('Your post has been deleted.')
+    # 削除後は、そのユーザーのプロフィールページにリダイレクト
+    return redirect(url_for('user_profile', username=current_user.username))
