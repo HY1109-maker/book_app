@@ -536,3 +536,61 @@ a {
 .nav-link:hover {
     color: #333;
 }
+
+/* Login & Register Page Styles */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 0;
+}
+
+/* 投稿ページの .form-container スタイルを共通化・上書き */
+.form-container {
+    max-width: 400px; /* ログインフォームは少し幅を狭く */
+    width: 100%;
+    margin: 20px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.form-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 4px;
+    box-sizing: border-box; /* paddingを含めて幅を計算 */
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.4rem;
+}
+
+.auth-switch a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline; /* aタグのスタイルを上書き */
+}
+
+/* post creation page */
+#post-map {
+    margin-top: 5px;
+    height: 200px;
+}
