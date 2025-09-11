@@ -16,7 +16,7 @@
         </div>
         <div class="post-detail-content">
             <div class="like-section" style="margin-bottom: 10px;">
-                <span class="like-btn {% if current_user.has_liked_post(post) %}liked{% endif %}" data-post-id="{{ post.id }}">❤️</span>
+                <i class="fa-solid fa-heart like-icon {% if current_user.is_authenticated and current_user.has_liked_post(post) %}liked{% endif %}" data-post-id="{{ post.id }}"></i>
                 <span class="likes-count">{{ post.likers.count() }}</span>
             </div>
             <p><strong>{{ post.author.username }}</strong>: {{ post.body or '' }}</p>

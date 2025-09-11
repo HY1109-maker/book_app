@@ -13,7 +13,7 @@
         <div style="display: none;">{{ form.shop_name }}</div>
 
         <div class="form-step">
-            <h2><span class="step-number">1</span>お店を検索して選択</h2>
+            <h2><span class="step-number"></span>お店を検索して選択</h2>
             <div class="search-wrapper">
                 <input type="text" id="shop_search_input" placeholder="お店の名前を入力してください">
                 <button type="button" onclick="searchShopOnMap()">検索</button>
@@ -25,7 +25,7 @@
         </div>
 
         <div class="form-step">
-            <h2><span class="step-number">2</span>写真とコメントを追加</h2>
+            <h2><span class="step-number"></span>写真とコメントを追加</h2>
             <div class="form-group">
                 {{ form.image.label }}<br>
                 {{ form.image(class="file-input") }}

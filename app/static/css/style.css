@@ -142,7 +142,7 @@ a {
     filter: grayscale(1);
     transition: all 0.2s ease-in-out;
 }
-.post-actions-overlay .like-icon.liked {
+.like-icon.liked {
     filter: grayscale(0);
     color: #ff3040;
     transform: scale(1.1);
@@ -536,6 +536,12 @@ a {
 .nav-link:hover {
     color: #333;
 }
+
+.nav-link.active {
+    color: #262626; /* アクティブな時の色を濃くする */
+    font-weight: bold; /* 少し太字にするのも良い */
+}
+
 
 /* Login & Register Page Styles */
 .login-container {

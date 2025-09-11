@@ -33,9 +33,13 @@ function handleLikeClick(event) {
 
 // ページ全体でいいね機能が有効になるように、post-grid全体にイベントリスナーを設定
 document.addEventListener('DOMContentLoaded', function() {
-    // タイムラインやプロフィールページなど、動的に要素が追加されることを考慮し、
-    // イベントリスナーを document 全体に設定する
-    document.addEventListener('click', handleLikeClick);
+    // まず、ページ内に .post-grid が存在するかどうかを確認
+    const postGrid = document.querySelector('.post-grid');
+    
+    // もし存在する場合（if postGrid is not null）だけ、イベントリスナーを追加
+    if (postGrid) {
+        postGrid.addEventListener('click', handleLikeClick);
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -54,4 +58,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Like functionality ---
+    const postGrid = document.querySelector('.post-grid');
+    if (postGrid) {
+        postGrid.addEventListener('click', handleLikeClick);
+    }
+    
+    // ▼▼▼ 以下を追記 ▼▼▼
+    // --- Bottom Navigation Active State ---
+    const navLinks = document.querySelectorAll('.nav-link');
+    const currentPath = window.location.pathname; // 現在のページのURLパスを取得 (例: /timeline)
+
+    navLinks.forEach(link => {
+        // 各リンクのURLパスを取得
+        const linkPath = new URL(link.href).pathname;
+        
+        // 現在のパスとリンクのパスが一致したら 'active' クラスを追加
+        if (currentPath === linkPath) {
+            link.classList.add('active');
+        }
+    });
 });
