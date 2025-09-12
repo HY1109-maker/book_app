@@ -17,6 +17,10 @@ followers = db.Table('followers',
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id', name='fk_followers_followed_id'))
 )
 
+bookmarks = db.Table('bookmarks',
+                    db.Column('user_id', db.Integer, db.ForeignKey('user.id', name='fk_bookmarks_user_id')),
+                    db.Column('shop.id', db.Integer, db.ForeignKey('shop.id', name='fk_bookmarks_shop_id')) 
+)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True, nullable=False)
@@ -24,6 +28,21 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), index =True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     posts = db.relationship('Post', back_populates='author', lazy='dynamic')
+
+    # bookmarked_shop
+    bookmarks_shops = db.relationship('Shop', secondary=bookmarks, back_populates='bookmarked_by', lazy='dynamic')
+
+    def bookmark_shop(self, shop):
+        if not self.has_bookmarked_shop(shop):
+            self.bookmarked_shops.append(shop)
+
+    def unbookmark_shop(self, shop):
+        if self.has_bookmarked_shop(shop):
+            self.bookmarked_shops.remove(shop)
+        
+    def has_bookmarked_shop(self, shop):
+        return self.bookmarked_shops.filter(
+            bookmarks.c.shop_id == shop.id).count() > 0
 
     # liked_post
     liked_posts = db.relationship('Post', secondary=likes, back_populates='likers', lazy='dynamic')
@@ -111,6 +130,9 @@ class Shop(db.Model):
 
     # make relation with posts
     posts = db.relationship('Post', back_populates='shop', lazy='dynamic')
+
+    # with bookmarks
+    bookmarked_by = db.relationship('User', secondary = bookmarks, back_populates='bookmarked_shop', lazy='dynamic')
 
     def __repr__(self):
         return f'<Shop {self.name}>'
