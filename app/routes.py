@@ -277,7 +277,8 @@ def get_shops():
             "properties": {
                 "id": shop.id,
                 "name": shop.name,
-                "osm_id": shop.osm_id
+                "osm_id": shop.osm_id,
+                "is_bookmarked": current_user.has_bookmarked_shop(shop)
             }
         })
     
@@ -575,3 +576,20 @@ def delete_post(post_id):
     flash('Your post has been deleted.')
     # 削除後は、そのユーザーのプロフィールページにリダイレクト
     return redirect(url_for('user_profile', username=current_user.username))
+
+@app.route('/bookmark/<int:shop_id>', methods=['POST'])
+@login_required
+def bookmark(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    current_user.bookmark_shop(shop)
+    db.session.commit()
+    return jsonify({'status':'ok', 'message':'Shop bookmarked'})
+
+@app.route('/unbookmark/<int:shop>', methods=['POST'])
+@login_required
+def unbookmark(shop_id):
+    shop = Shop.query.get_or_404(shop_id)
+    current_user.unbookmark_shop(shop)
+    db.session.commit()
+    return jsonify({'status':'ok', 'message':'Shop unbookmarked'})
+

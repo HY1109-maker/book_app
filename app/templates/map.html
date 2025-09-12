@@ -53,7 +53,7 @@
             let osmShopsLayer = L.geoJSON().addTo(map);
 
                         
-            function openShopPopup(latlng, shopId, shopName) {
+            function openShopPopup(latlng, shopId, shopName, isBookmarked) {
                 // APIからそのお店の投稿を取得
                 fetch(`/api/shops/${shopId}/posts`)
                     .then(response => response.json())
@@ -67,10 +67,17 @@
                             imagesHtml = '<p>No images yet.</p>';
                         }
 
+                        // bookmark
+                        const bookmarkClass = isBookmarked ? 'bookmarked' : '';
+                        const bookmarkText = isBookmarked ? '保存済み' : 'お店を保存'
+
                         // ポップアップのHTMLコンテンツを生成
                         const popupContent = `
                             <div class="custom-popup">
                                 <h3>${shopName}</h3>
+                                <button class = "bookmark-btn ${bookmarkClass}" data-shop-id="${shopId}">
+                                    <i class="fa-solid fa-bookmark"></i> ${bookmarkText}
+                                </button>
                                 <div class="popup-image-scroller">
                                     ${imagesHtml}
                                 </div>
@@ -127,11 +134,35 @@
             }
 
             // --- イベントリスナー ---
-            ourShopsLayer.on('click', e => openShopPopup(e.latlng, e.layer.feature.properties.id, e.layer.feature.properties.name));
+            ourShopsLayer.on('click', e => {
+                const props = e.layer.feature.properties;
+                openShopPopup(e.latlng, e.layer.feature.properties.id, e.layer.feature.properties.name)
+            });
+
             osmShopsLayer.on('click', e => {
                 const shopName = e.layer.feature.properties.name || '名前不明';
                 const link = `<a href="/create_post?shop_name=${encodeURIComponent(shopName)}">Be the first to post!</a>`;
                 e.target.bindPopup(`<b>${shopName}</b><br>No posts yet. ${link}`).openPopup();
+            });
+
+            map.on('popupopen', function() {
+                const bookmarkBtn = document.querySelector('.bookmark-btn');
+                if (bookmarkBtn) {
+                    bookmarkBtn.addEventListener('click', function() {
+                        const shopId = this.dataset.shopId;
+                        const isBookmarked = this.classList.contains('bookmarked');
+                        const apiUrl = isBookmarked ? `/unbookmark/${shopId}` : `/bookmark/${shopId}`;
+
+                        fetch(apiUrl, { method: 'POST' })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'ok') {
+                                    this.classList.toggle('bookmarked');
+                                    this.innerHTML = this.classList.contains('bookmarked') ? '<i class="fa-solid fa-bookmark"></i> Saved' : '<i class="fa-solid fa-bookmark"></i> Save';
+                                }
+                            });
+                    });
+                }
             });
 
             // --- 初期表示 ---

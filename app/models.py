@@ -19,7 +19,7 @@ followers = db.Table('followers',
 
 bookmarks = db.Table('bookmarks',
                     db.Column('user_id', db.Integer, db.ForeignKey('user.id', name='fk_bookmarks_user_id')),
-                    db.Column('shop.id', db.Integer, db.ForeignKey('shop.id', name='fk_bookmarks_shop_id')) 
+                    db.Column('shop_id', db.Integer, db.ForeignKey('shop.id', name='fk_bookmarks_shop_id')) 
 )
 
 class User(UserMixin, db.Model):
@@ -30,7 +30,7 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', back_populates='author', lazy='dynamic')
 
     # bookmarked_shop
-    bookmarks_shops = db.relationship('Shop', secondary=bookmarks, back_populates='bookmarked_by', lazy='dynamic')
+    bookmarked_shops = db.relationship('Shop', secondary=bookmarks, back_populates='bookmarked_by', lazy='dynamic')
 
     def bookmark_shop(self, shop):
         if not self.has_bookmarked_shop(shop):
@@ -132,7 +132,7 @@ class Shop(db.Model):
     posts = db.relationship('Post', back_populates='shop', lazy='dynamic')
 
     # with bookmarks
-    bookmarked_by = db.relationship('User', secondary = bookmarks, back_populates='bookmarked_shop', lazy='dynamic')
+    bookmarked_by = db.relationship('User', secondary = bookmarks, back_populates='bookmarked_shops', lazy='dynamic')
 
     def __repr__(self):
         return f'<Shop {self.name}>'
