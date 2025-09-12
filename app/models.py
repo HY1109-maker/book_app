@@ -39,7 +39,7 @@ class User(UserMixin, db.Model):
     def unbookmark_shop(self, shop):
         if self.has_bookmarked_shop(shop):
             self.bookmarked_shops.remove(shop)
-        
+
     def has_bookmarked_shop(self, shop):
         return self.bookmarked_shops.filter(
             bookmarks.c.shop_id == shop.id).count() > 0

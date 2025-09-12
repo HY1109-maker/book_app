@@ -583,13 +583,13 @@ def bookmark(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     current_user.bookmark_shop(shop)
     db.session.commit()
-    return jsonify({'status':'ok', 'message':'Shop bookmarked'})
+    return jsonify({'status': 'ok', 'message': 'Shop bookmarked.'})
 
-@app.route('/unbookmark/<int:shop>', methods=['POST'])
+@app.route('/unbookmark/<int:shop_id>', methods=['POST'])
 @login_required
 def unbookmark(shop_id):
     shop = Shop.query.get_or_404(shop_id)
     current_user.unbookmark_shop(shop)
     db.session.commit()
-    return jsonify({'status':'ok', 'message':'Shop unbookmarked'})
+    return jsonify({'status': 'ok', 'message': 'Bookmark removed.'})
 
