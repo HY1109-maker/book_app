@@ -442,6 +442,7 @@ def user_profile(username):
     
     return render_template('user_profile.html', title=f"{user.username}'s Profile", user=user, posts=posts)
 
+
 @app.route('/api/user/<username>/shops')
 @login_required
 def get_user_shops(username):
