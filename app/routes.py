@@ -581,15 +581,21 @@ def delete_post(post_id):
 @login_required
 def bookmark(shop_id):
     shop = Shop.query.get_or_404(shop_id)
-    current_user.bookmark_shop(shop)
-    db.session.commit()
-    return jsonify({'status': 'ok', 'message': 'Shop bookmarked.'})
+    if not current_user.has_bookmarked_shop(shop):
+        # ▼▼▼ current_userのブックマークリストに直接追加 ▼▼▼
+        current_user.bookmarked_shops.append(shop)
+        db.session.commit()
+        print(f"--- DB WRITE: {current_user.username} BOOKMARKED {shop.name} ---") # ターミナルで確認
+    return jsonify({'status': 'ok'})
 
 @app.route('/unbookmark/<int:shop_id>', methods=['POST'])
 @login_required
 def unbookmark(shop_id):
     shop = Shop.query.get_or_404(shop_id)
-    current_user.unbookmark_shop(shop)
-    db.session.commit()
-    return jsonify({'status': 'ok', 'message': 'Bookmark removed.'})
+    if current_user.has_bookmarked_shop(shop):
+        # ▼▼▼ current_userのブックマークリストから直接削除 ▼▼▼
+        current_user.bookmarked_shops.remove(shop)
+        db.session.commit()
+        print(f"--- DB WRITE: {current_user.username} UNBOOKMARKED {shop.name} ---") # ターミナルで確認
+    return jsonify({'status': 'ok'})
 

@@ -18,156 +18,141 @@
 {% endblock %}
 
 {% block head_extra %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const map = L.map('map').setView([35.0116, 135.7681], 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            }).addTo(map);
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('map').setView([35.0116, 135.7681], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
 
-            document.getElementById('searchInput').addEventListener('keyup', function(event) {
-                // 押されたキーが 'Enter' だったら searchMap() を実行
-                if (event.key === 'Enter') {
-                    searchMap();
-                }
-            });
+    const postsOnlyFilter = document.getElementById('posts-only-filter');
+    const searchInput = document.getElementById('searchInput');
 
-            const postsOnlyFilter = document.getElementById('posts-only-filter');
+    // --- レイヤー定義 ---
+    const ourShopsLayer = L.geoJSON(null, { pointToLayer: createOurShopMarker }).addTo(map);
+    const osmShopsLayer = L.geoJSON().addTo(map);
 
-            // ▼▼▼ createOurShopMarker関数をAwesomeMarkersを使うように書き換える ▼▼▼
-            function createOurShopMarker(feature, latlng) {
-                // Font Awesomeのアイコン名 (例: 'utensils', 'martini-glass', 'camera')
-                // Font Awesomeのサイトで好きなアイコンを探せます
-                const icon = L.AwesomeMarkers.icon({
-                    icon: 'camera',
-                    markerColor: 'blue', // 色: 'red', 'darkred', 'orange', 'green', 'blue', 'purple', 'darkpurple', 'cadetblue'
-                    prefix: 'fa' // Font Awesomeを使う場合のおまじない
-                });
-                return L.marker(latlng, { icon: icon });
-            }
-
-            // const detailsContainer = document.getElementById('shop-details-container');
-            
-            // ▼▼▼ ourShopsLayerの初期化時に、新しい関数を指定する ▼▼▼
-            let ourShopsLayer = L.geoJSON(null, { pointToLayer: createOurShopMarker }).addTo(map);
-            let osmShopsLayer = L.geoJSON().addTo(map);
-
-                        
-            function openShopPopup(latlng, shopId, shopName, isBookmarked) {
-                // APIからそのお店の投稿を取得
-                fetch(`/api/shops/${shopId}/posts`)
-                    .then(response => response.json())
-                    .then(posts => {
-                        let imagesHtml = '';
-                        if (posts.length > 0) {
-                            posts.slice(0, 5).forEach(post => { // 最大5枚表示
-                                imagesHtml += `<img src="/static/uploads/${post.image_filename}" class="popup-scroll-image">`;
-                            });
-                        } else {
-                            imagesHtml = '<p>No images yet.</p>';
-                        }
-
-                        // bookmark
-                        const bookmarkClass = isBookmarked ? 'bookmarked' : '';
-                        const bookmarkText = isBookmarked ? 'saved' : 'save'
-
-                        // ポップアップのHTMLコンテンツを生成
-                        const popupContent = `
-                            <div class="custom-popup">
-                                <h3>${shopName}</h3>
-                                <button class = "bookmark-btn ${bookmarkClass}" data-shop-id="${shopId}">
-                                    <i class="fa-solid fa-bookmark"></i> ${bookmarkText}
-                                </button>
-                                <div class="popup-image-scroller">
-                                    ${imagesHtml}
-                                </div>
-                                <a href="/shop/${shopId}" class="popup-details-link">View all posts</a>
-                            </div>
-                        `;
-
-                        // ポップアップを作成して表示
-                        L.popup({ 
-                            minWidth: 280,
-                            // マップが自動で動く際に、左上に余白(検索欄の高さ分)を考慮させる
-                            autoPanPaddingTopLeft: L.point(0, 70) 
-                        })
-                            .setLatLng(latlng)
-                            .setContent(popupContent)
-                            .openOn(map);
-                    });
-            }
-
-
-            window.searchMap = function() {
-                // レイヤーをクリア
-                ourShopsLayer.clearLayers();
-                osmShopsLayer.clearLayers();
-                
-                const bounds = map.getBounds();
-                const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
-                const keyword = document.getElementById('searchInput').value;
-                const ourShopOsmIds = new Set();
-
-                // 1. 自前のDBからお店を取得
-                fetch('/api/shops')
-                    .then(response => response.json())
-                    .then(data => {
-                        data.features.forEach(feature => {
-                            ourShopOsmIds.add(feature.properties.osm_id); // osm_idをセットに保存
-                        });
-                        ourShopsLayer.addData(data);
-                    })
-                    .then(() => {
-                        // 2. Overpass APIからお店を取得
-                        fetch(`/api/osm_search?keyword=${keyword}&bbox=${bbox}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                // 自前DBにないお店だけをフィルタリング
-                                const filteredFeatures = data.features.filter(
-                                    feature => !ourShopOsmIds.has(feature.properties.osm_id)
-                                );
-                                osmShopsLayer.addData({ type: "FeatureCollection", features: filteredFeatures });
-
-                                applyMapFilter();
-                            });
-                    });
-            }
-
-            // --- イベントリスナー ---
-            ourShopsLayer.on('click', e => {
-                const props = e.layer.feature.properties;
-                openShopPopup(e.latlng, e.layer.feature.properties.id, e.layer.feature.properties.name)
-            });
-
-            osmShopsLayer.on('click', e => {
-                const shopName = e.layer.feature.properties.name || '名前不明';
-                const link = `<a href="/create_post?shop_name=${encodeURIComponent(shopName)}">Be the first to post!</a>`;
-                e.target.bindPopup(`<b>${shopName}</b><br>No posts yet. ${link}`).openPopup();
-            });
-
-            map.on('popupopen', function() {
-                const bookmarkBtn = document.querySelector('.bookmark-btn');
-                if (bookmarkBtn) {
-                    bookmarkBtn.addEventListener('click', function() {
-                        const shopId = this.dataset.shopId;
-                        const isBookmarked = this.classList.contains('bookmarked');
-                        const apiUrl = isBookmarked ? `/unbookmark/${shopId}` : `/bookmark/${shopId}`;
-
-                        fetch(apiUrl, { method: 'POST' })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'ok') {
-                                    this.classList.toggle('bookmarked');
-                                    this.innerHTML = this.classList.contains('bookmarked') ? '<i class="fa-solid fa-bookmark"></i> Saved' : '<i class="fa-solid fa-bookmark"></i> Save';
-                                }
-                            });
-                    });
-                }
-            });
-
-            // --- 初期表示 ---
-            searchMap();
-            map.on('moveend', searchMap);
+    // --- 関数定義 ---
+    function createOurShopMarker(feature, latlng) {
+        const icon = L.AwesomeMarkers.icon({
+            icon: 'camera', markerColor: 'blue', prefix: 'fa'
         });
-    </script>
+        return L.marker(latlng, { icon: icon });
+    }
+
+    function openShopPopup(layer) {
+        const props = layer.feature.properties;
+        const latlng = layer.getLatLng();
+
+        fetch(`/api/shops/${props.id}/posts`)
+            .then(response => response.json())
+            .then(posts => {
+                let imagesHtml = posts.length > 0
+                    ? posts.slice(0, 5).map(p => `<img src="/static/uploads/${p.image_filename}" class="popup-scroll-image">`).join('')
+                    : '<p>No images yet.</p>';
+
+                const bookmarkClass = props.is_bookmarked ? 'bookmarked' : '';
+                const bookmarkText = props.is_bookmarked ? 'Saved' : 'Save';
+
+                const popupContent = `
+                    <div class="custom-popup">
+                        <div class="popup-header">
+                            <h3>${props.name}</h3>
+                            <button class="bookmark-btn ${bookmarkClass}" data-shop-id="${props.id}">
+                                <i class="fa-solid fa-bookmark"></i> ${bookmarkText}
+                            </button>
+                        </div>
+                        <div class="popup-image-scroller">${imagesHtml}</div>
+                        <a href="/shop/${props.id}" class="popup-details-link">View all posts</a>
+                    </div>
+                `;
+                layer.bindPopup(popupContent, { minWidth: 280, autoPanPaddingTopLeft: L.point(0, 70) }).openPopup();
+            });
+    }
+
+    function applyMapFilter() {
+        if (postsOnlyFilter.checked) {
+            map.removeLayer(osmShopsLayer);
+        } else {
+            map.addLayer(osmShopsLayer);
+        }
+    }
+
+    // --- メインの検索・描画関数 ---
+    window.searchMap = function() {
+        ourShopsLayer.clearLayers();
+        osmShopsLayer.clearLayers();
+        const bounds = map.getBounds();
+        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+        const keyword = searchInput.value;
+        const ourShopOsmIds = new Set();
+
+        fetch('/api/shops')
+            .then(res => res.json())
+            .then(data => {
+                data.features.forEach(f => { if(f.properties.osm_id) ourShopOsmIds.add(f.properties.osm_id) });
+                ourShopsLayer.addData(data);
+            })
+            .then(() => {
+                fetch(`/api/osm_search?keyword=${keyword}&bbox=${bbox}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const filtered = data.features.filter(f => f.properties.osm_id && !ourShopOsmIds.has(f.properties.osm_id));
+                        osmShopsLayer.addData({ type: "FeatureCollection", features: filtered });
+                        applyMapFilter(); // 検索完了後にフィルターを適用
+                    });
+            });
+    }
+
+    // --- イベントリスナー ---
+    ourShopsLayer.on('click', e => openShopPopup(e.layer));
+
+    osmShopsLayer.on('click', e => {
+        const props = e.layer.feature.properties;
+        const shopName = props.name || '名前不明';
+        const link = `<a href="/create_post?shop_name=${encodeURIComponent(shopName)}&osm_id=${props.osm_id}&lat=${e.latlng.lat}&lon=${e.latlng.lng}">Be the first to post!</a>`;
+        e.layer.bindPopup(`<b>${shopName}</b><br>No posts yet. ${link}`).openPopup();
+    });
+
+    // ★★★ ブックマークのクリック処理を「イベント委譲」で実装 ★★★
+    map.getContainer().addEventListener('click', function(event) {
+        const bookmarkBtn = event.target.closest('.bookmark-btn');
+        if (!bookmarkBtn) return;
+
+        const shopId = bookmarkBtn.dataset.shopId;
+        
+        // ourShopsLayerから該当するマーカーを探す
+        let targetLayer = null;
+        ourShopsLayer.eachLayer(layer => {
+            if (layer.feature.properties.id == shopId) {
+                targetLayer = layer;
+            }
+        });
+
+        if (!targetLayer) return;
+
+        const isBookmarked = targetLayer.feature.properties.is_bookmarked;
+        const apiUrl = isBookmarked ? `/unbookmark/${shopId}` : `/bookmark/${shopId}`;
+
+        fetch(apiUrl, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    // フロントエンドの記憶を更新
+                    targetLayer.feature.properties.is_bookmarked = !isBookmarked;
+                    // ボタンの見た目を更新
+                    bookmarkBtn.classList.toggle('bookmarked');
+                    bookmarkBtn.innerHTML = !isBookmarked ? '<i class="fa-solid fa-bookmark"></i> Saved' : '<i class="fa-solid fa-bookmark"></i> Save';
+                }
+            });
+    });
+
+    postsOnlyFilter.addEventListener('change', applyMapFilter);
+    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchMap(); });
+    
+    // --- 初期表示 ---
+    searchMap();
+    map.on('moveend', searchMap);
+});
+</script>
 {% endblock %}
